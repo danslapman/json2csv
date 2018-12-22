@@ -26,9 +26,11 @@ dependencies:
 - text-format
 - text-show
 - aeson
+- lens-aeson
 - optparse-applicative
 - vector
 - unordered-containers
+- lens
 
 library:
   source-dirs: src
