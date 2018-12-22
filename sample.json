@@ -1,0 +1,5 @@
+{
+  "a": "field a",
+  "b": [{"value": "field b"}],
+  "c": {"value": "field c"}
+}
