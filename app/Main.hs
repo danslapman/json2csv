@@ -11,7 +11,6 @@ import Data.Aeson.Internal
 import Data.Aeson.Lens
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as LBS
-import Data.Foldable (fold)
 import Data.Function
 import Data.List (union)
 import Data.Maybe
@@ -25,6 +24,10 @@ import System.IO
 separator :: Text
 separator = ";"
 
+mkSepString :: [Text] -> Text
+mkSepString = intercalate separator
+
+{-
 main :: IO ()
 main = do
   (jsonFile : outFile : _) <- getArgs 
@@ -36,19 +39,42 @@ main = do
           hClose
           (\outHandle ->
             void $ traverse (TIO.hPutStrLn outHandle) csv)
+            -}
+
+main :: IO ()
+main = do
+  (jsonFile : outFile : _) <- getArgs
+  header <- bracket (openFile jsonFile ReadMode)
+            hClose
+            computeHeaderMultiline
+  bracket (openFile jsonFile ReadMode)
+          hClose
+          (\hIn ->
+            bracket (openFile outFile WriteMode)
+            hClose
+            (\hOut -> do 
+              TIO.hPutStrLn hOut $ mkSepString $ fmap jsonPathText header
+              whileM_ (fmap not $ hIsEOF hIn) (parseAndWriteEntry header hIn hOut)
+            )
+          )
 
 convertSingle :: Value -> [Text]
 convertSingle json = do
-  let sepStr = intercalate separator
   let header = computePaths True json
   let entries = json ^.. values
-  let makeLine val = sepStr $ fmap (showj . (fromMaybe Null) . ($ val) . (navigate)) header
-  (sepStr $ fmap jsonPathText header) : (fmap makeLine entries)
+  let makeLine val = mkSepString $ fmap (showj . (fromMaybe Null) . ($ val) . (navigate)) header
+  (mkSepString $ fmap jsonPathText header) : (fmap makeLine entries)
 
 computeHeaderMultiline :: Handle -> IO [JSONPath]
 computeHeaderMultiline handle = do
-  lines <- whileM (hIsEOF handle) $ do
+  lines <- whileM (fmap not $ hIsEOF handle) $ do
       line <- fmap LBS.fromStrict $ BS.hGetLine handle
       let (Just parsed) = decode line :: Maybe Value
       return $ computePaths True parsed
-  return $ foldl1 union lines
+  return $ foldl union [] lines
+
+parseAndWriteEntry :: [JSONPath] -> Handle -> Handle -> IO ()
+parseAndWriteEntry header hIn hOut = do
+  line <- fmap LBS.fromStrict $ BS.hGetLine hIn
+  let (Just parsed) = decode line :: Maybe Value
+  TIO.hPutStrLn hOut $ mkSepString $ fmap (showj . (fromMaybe Null) . ($ parsed) . (navigate)) header
