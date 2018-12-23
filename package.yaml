@@ -1,10 +1,10 @@
 name:                json2csv
 version:             0.1.0.0
-github:              "githubuser/json2csv"
+github:              "danslapman/json2csv"
 license:             BSD3
-author:              "Author name here"
-maintainer:          "example@example.com"
-copyright:           "2018 Author name here"
+author:              "Daniil Smirnov"
+maintainer:          "danslapman@gmail.com"
+copyright:           "2018 Daniil Smirnov"
 
 extra-source-files:
 - README.md
@@ -23,15 +23,13 @@ dependencies:
 - base >= 4.7 && < 5
 - ilist
 - text
-- text-format
-- text-show
 - bytestring
 - aeson
-- lens-aeson
 - optparse-applicative
 - vector
 - unordered-containers
 - lens
+- lens-aeson
 
 library:
   source-dirs: src

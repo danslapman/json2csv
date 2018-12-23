@@ -1,0 +1,12 @@
+[
+  {
+    "a": "field a",
+    "b": [{"value": "field b"}],
+    "c": {"value": "field c"}
+  },
+  {
+    "a": "field a1",
+    "b": [{"value": "field b1"}],
+    "c": {"value": "field c1"}
+  }
+]

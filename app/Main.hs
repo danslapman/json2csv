@@ -15,4 +15,4 @@ main = do
   contents <- BS.readFile $ jsonFile
   let lazyContents = LBS.fromStrict contents
   let parsed = decode lazyContents :: Maybe Value
-  print $ fmap (computeHeader True) parsed
+  print $ fmap (computePaths True) parsed
