@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE LambdaCase #-}
 
-module Json2Csv (computePaths, navigate) where
+module Json2Csv (computePaths, navigate, jsonPathText) where
 
 import Control.Lens ((^?))
 import Control.Monad ((>=>))
@@ -12,8 +12,9 @@ import Data.List (union)
 import Data.List.Index
 import qualified Data.HashMap.Strict as HM
 import Data.Semigroup
-import Data.Text (Text)
+import Data.Text (Text, intercalate)
 import Data.Vector (toList)
+import TextShow
 
 concatUnion :: Eq a => [[a]] -> [a]
 concatUnion = foldl1 union
@@ -45,3 +46,10 @@ navigate path =
                   Index i -> (^? nth i) :: Value -> Maybe Value
       (firstStep : otherSteps) = (fmap stepFwd path)
   in foldl (>=>) firstStep otherSteps
+
+jsonPathText :: JSONPath -> Text
+jsonPathText path =
+  let repr = \case
+               Key k -> k
+               Index i -> showt i
+  in intercalate "." $ fmap repr path
