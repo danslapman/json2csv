@@ -1,13 +1,17 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE LambdaCase #-}
 
-module Json2Csv (computePaths) where
+module Json2Csv (computePaths, navigate) where
 
---import Control.Lens ((^?))
+import Control.Lens ((^?))
+import Control.Monad ((>=>))
 import Data.Aeson
 import Data.Aeson.Internal
+import Data.Aeson.Lens
 import Data.List (union)
 import Data.List.Index
 import qualified Data.HashMap.Strict as HM
+import Data.Semigroup
 import Data.Text (Text)
 import Data.Vector (toList)
 
@@ -33,3 +37,11 @@ computePaths _ (Object obj) =
   concatMap (uncurry (\key -> (prepend (Key key)))) . 
   HM.toList . 
   (HM.map (computePaths False)) $ obj
+
+navigate :: JSONPath -> Value -> Maybe Value
+navigate path =
+  let stepFwd = \case
+                  Key k -> (^? key k) :: Value -> Maybe Value
+                  Index i -> (^? nth i) :: Value -> Maybe Value
+      (firstStep : otherSteps) = (fmap stepFwd path)
+  in foldl (>=>) firstStep otherSteps
