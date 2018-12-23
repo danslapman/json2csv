@@ -5,11 +5,15 @@ module Main where
 import Control.Exception
 import Control.Lens ((^..))
 import Control.Monad
+import Control.Monad.Loops
 import Data.Aeson
+import Data.Aeson.Internal
 import Data.Aeson.Lens
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as LBS
+import Data.Foldable (fold)
 import Data.Function
+import Data.List (union)
 import Data.Maybe
 import Data.Text (Text, intercalate)
 import qualified Data.Text.IO as TIO
@@ -40,3 +44,11 @@ convertSingle json = do
   let entries = json ^.. values
   let makeLine val = sepStr $ fmap (showj . (fromMaybe Null) . ($ val) . (navigate)) header
   (sepStr $ fmap jsonPathText header) : (fmap makeLine entries)
+
+computeHeaderMultiline :: Handle -> IO [JSONPath]
+computeHeaderMultiline handle = do
+  lines <- whileM (hIsEOF handle) $ do
+      line <- fmap LBS.fromStrict $ BS.hGetLine handle
+      let (Just parsed) = decode line :: Maybe Value
+      return $ computePaths True parsed
+  return $ foldl1 union lines
