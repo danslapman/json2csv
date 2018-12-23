@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE LambdaCase #-}
 
-module Json2Csv (computePaths, navigate, jsonPathText) where
+module Json2Csv (computePaths, navigate, jsonPathText, showj) where
 
 import Control.Lens ((^?))
 import Control.Monad ((>=>))
@@ -12,7 +12,7 @@ import Data.List (union)
 import Data.List.Index
 import qualified Data.HashMap.Strict as HM
 import Data.Semigroup
-import Data.Text (Text, intercalate)
+import Data.Text (Text, intercalate, pack)
 import Data.Vector (toList)
 import TextShow
 
@@ -53,3 +53,9 @@ jsonPathText path =
                Key k -> k
                Index i -> showt i
   in intercalate "." $ fmap repr path
+
+showj :: Value -> Text
+showj Null = ""
+showj (Bool b) = showt b
+showj (Number n) = pack $ show n
+showj (String s) = s
