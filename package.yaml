@@ -25,6 +25,7 @@ dependencies:
 - text
 - text-format
 - text-show
+- bytestring
 - aeson
 - lens-aeson
 - optparse-applicative

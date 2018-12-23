@@ -3,11 +3,16 @@
 module Main where
 
 import Data.Aeson
+import Data.ByteString as BS
+import Data.ByteString.Lazy as LBS
 import Data.Function
 import Json2Csv
-
---sut = decode "{\"foo\": [\"abc\",\"def\", {\"peka\": 1}]}" :: Maybe Value
-sut = decode "[{\"peka\": 1}, {\"peka\": 2}, {\"peka\": 3}]" :: Maybe Value
+import System.Environment
 
 main :: IO ()
-main = print $ fmap (computeHeader True) sut
+main = do
+  (jsonFile : _) <- getArgs 
+  contents <- BS.readFile $ jsonFile
+  let lazyContents = LBS.fromStrict contents
+  let parsed = decode lazyContents :: Maybe Value
+  print $ fmap (computeHeader True) parsed
