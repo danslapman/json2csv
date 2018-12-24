@@ -59,6 +59,7 @@ data JsonValueTree =
   ValueRoot JsonPathElement [JsonValueTree]
   | SingleValue JsonPathElement Value
   | ValueArray [Value]
+  | TreeArray [[JsonValueTree]]
   deriving (Eq, Show, Typeable)
 
 type JsonTree = [JsonValueTree]
@@ -81,5 +82,5 @@ extract schema value =
             let nodeValues = v ^.. values
                 childrenExtractors = flip extractTree <$> children
                 nodeTrees = (\val -> catMaybes $ ($val) <$> childrenExtractors) <$> nodeValues
-            in ValueRoot Iterator <$> maybeNel (concat nodeTrees)
+            in TreeArray <$> maybeNel nodeTrees
   in catMaybes $ ((extractTree value) <$> schema)
