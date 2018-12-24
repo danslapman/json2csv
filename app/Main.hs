@@ -49,6 +49,8 @@ main = do
             computeHeaderMultiline
   withFile jsonFile ReadMode $ \hIn ->
     withFile outFile WriteMode $ \hOut -> do
+      hSetEncoding hIn utf8
+      hSetEncoding hOut utf8
       TIO.hPutStrLn hOut $ mkSepString $ fmap jsonPathText header
       whileM_ (fmap not $ hIsEOF hIn) (parseAndWriteEntry header hIn hOut)
             
