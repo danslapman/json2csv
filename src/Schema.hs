@@ -42,11 +42,10 @@ toSchemaTree =
         ((PathNode el branches), h:tail) | el == h -> 
           PathNode el $ branches #+ tail
         (PathEnd, path) -> toSchemaTree path
+        (t, _) -> t
   in
     if any (hasSameRoot path) schema
-    then fmap (\case 
-      t | hasSameRoot path t -> append path t 
-      t -> t) schema
+    then fmap (append path) schema
     else (toSchemaTree path) : schema
 
 toSchema :: [JsonPath] -> JsonSchema
