@@ -7,7 +7,6 @@ import Control.Lens ((^..))
 import Control.Monad
 import Control.Monad.Loops
 import Data.Aeson
-import Data.Aeson.Internal
 import Data.Aeson.Lens
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as LBS
@@ -27,39 +26,16 @@ separator = ";"
 mkSepString :: [Text] -> Text
 mkSepString = intercalate separator
 
-{-
-main :: IO ()
-main = do
-  (jsonFile : outFile : _) <- getArgs 
-  contents <- BS.readFile $ jsonFile
-  let lazyContents = LBS.fromStrict contents
-  let parsed = decode lazyContents :: Maybe Value
-  let (Just csv) = fmap convertSingle parsed
-  bracket (openFile outFile WriteMode)
-          hClose
-          (\outHandle ->
-            void $ traverse (TIO.hPutStrLn outHandle) csv)
-            -}
-
 main :: IO ()
 main = do
   (jsonFile : outFile : _) <- getArgs
-  header <- bracket (openFile jsonFile ReadMode)
-            hClose
-            computeHeaderMultiline
+  header <- withFile jsonFile ReadMode computeHeaderMultiline
   withFile jsonFile ReadMode $ \hIn ->
     withFile outFile WriteMode $ \hOut -> do
       hSetEncoding hIn utf8
       hSetEncoding hOut utf8
       TIO.hPutStrLn hOut $ mkSepString $ fmap jsonPathText header
       whileM_ (fmap not $ hIsEOF hIn) (parseAndWriteEntry header hIn hOut)
-            
-convertSingle :: Value -> [Text]
-convertSingle json = do
-  let (Just header) = computePaths True json
-  let entries = json ^.. values
-  let makeLine val = mkSepString $ fmap (showj . (fromMaybe Null) . ($ val) . (navigate)) header
-  (mkSepString $ fmap jsonPathText header) : (fmap makeLine entries)
 
 computeHeaderMultiline :: Handle -> IO [JSONPath]
 computeHeaderMultiline handle = do
@@ -74,4 +50,5 @@ parseAndWriteEntry :: [JSONPath] -> Handle -> Handle -> IO ()
 parseAndWriteEntry header hIn hOut = do
   line <- fmap LBS.fromStrict $ BS.hGetLine hIn
   let (Just parsed) = decode line :: Maybe Value
-  TIO.hPutStrLn hOut $ mkSepString $ fmap (showj . (fromMaybe Null) . ($ parsed) . (navigate)) header
+  let lines = sequence $ fmap ((fromMaybe [Null]) . ($ parsed) . (navigate)) header
+  forM_ lines $ \line -> TIO.hPutStrLn hOut $ mkSepString . (fmap showj) $ line
