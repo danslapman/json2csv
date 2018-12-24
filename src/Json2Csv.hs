@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE LambdaCase #-}
 
-module Json2Csv (JSONPathElement, JSONPath, computePaths, navigate, jsonPathText, showj) where
+module Json2Csv (computePaths, navigate, jsonPathText, showj) where
 
 import Control.Lens ((^?), (^..))
 import Control.Monad ((>=>))
@@ -18,14 +18,8 @@ import Data.Traversable
 import Data.Typeable (Typeable)
 import Data.Vector (toList)
 import qualified Data.Vector as V
+import Schema
 import TextShow
-
-data JSONPathElement = 
-  Key Text
-  | Iterator
-  deriving (Eq, Show, Typeable, Ord)
-
-type JSONPath = [JSONPathElement]
 
 concatUnion :: Eq a => [[a]] -> [a]
 concatUnion = foldl1 union

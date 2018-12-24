@@ -17,6 +17,7 @@ import Data.Text (Text, intercalate)
 import qualified Data.Text.IO as TIO
 import Data.Traversable
 import Json2Csv
+import Schema (JSONPath)
 import System.Environment
 import System.IO
 
