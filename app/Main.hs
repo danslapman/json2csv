@@ -17,7 +17,7 @@ import Data.Text (Text, intercalate)
 import qualified Data.Text.IO as TIO
 import Data.Traversable
 import Json2Csv
-import Schema (JSONPath)
+import Schema
 import System.Environment
 import System.IO
 
@@ -38,7 +38,7 @@ main = do
       TIO.hPutStrLn hOut $ mkSepString $ fmap jsonPathText header
       whileM_ (fmap not $ hIsEOF hIn) (parseAndWriteEntry header hIn hOut)
 
-computeHeaderMultiline :: Handle -> IO [JSONPath]
+computeHeaderMultiline :: Handle -> IO [JsonPath]
 computeHeaderMultiline handle = do
   lines <- whileM (fmap not $ hIsEOF handle) $ do
       line <- fmap LBS.fromStrict $ BS.hGetLine handle
@@ -47,7 +47,7 @@ computeHeaderMultiline handle = do
       return $ header
   return $ foldl union [] lines
 
-parseAndWriteEntry :: [JSONPath] -> Handle -> Handle -> IO ()
+parseAndWriteEntry :: [JsonPath] -> Handle -> Handle -> IO ()
 parseAndWriteEntry header hIn hOut = do
   line <- fmap LBS.fromStrict $ BS.hGetLine hIn
   let (Just parsed) = decode line :: Maybe Value

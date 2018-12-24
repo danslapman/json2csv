@@ -24,7 +24,7 @@ import TextShow
 concatUnion :: Eq a => [[a]] -> [a]
 concatUnion = foldl1 union
 
-prepend :: JSONPathElement -> [JSONPath] -> [JSONPath]
+prepend :: JsonPathElement -> [JsonPath] -> [JsonPath]
 prepend prefix [] = [prefix : []]
 prepend prefix path = fmap (\p -> prefix : p) path
 
@@ -37,7 +37,7 @@ nonEmptyJ _ = True
 maybeNel :: [a] -> Maybe [a]
 maybeNel = find (not . null) . Just
 
-computePaths :: Bool -> Value -> Maybe [JSONPath]
+computePaths :: Bool -> Value -> Maybe [JsonPath]
 computePaths _ Null = Just []
 computePaths _ (Bool _) = Just []
 computePaths _ (Number _) = Just []
@@ -66,7 +66,7 @@ computePaths _ (Object obj) =
 (|=>) :: Monad f => (a -> f [b]) -> (b -> f [c]) -> a -> f [c]
 (|=>) fx fy v = fmap concat (fx >=> (mapM fy) $ v) 
 
-navigate :: JSONPath -> Value -> Maybe [Value]
+navigate :: JsonPath -> Value -> Maybe [Value]
 navigate path =
   let stepFwd = \case
                   Key k -> fmap (:[]) . (^? key k) :: Value -> Maybe [Value]
@@ -74,7 +74,7 @@ navigate path =
       (firstStep : otherSteps) = (fmap stepFwd path)
   in foldl (|=>) firstStep otherSteps
 
-jsonPathText :: JSONPath -> Text
+jsonPathText :: JsonPath -> Text
 jsonPathText path =
   let repr = \case
                Key k -> k
