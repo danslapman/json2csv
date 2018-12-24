@@ -4,11 +4,9 @@
 module Json2Csv (computePaths, navigate, jsonPathText, showj) where
 
 import Control.Lens ((^?), (^..))
-import Control.Monad ((>=>))
 import Data.Aeson
 import Data.Aeson.Lens
 import Data.Maybe (catMaybes)
-import Data.Foldable (find)
 import Data.List (union, null)
 import Data.List.Index
 import qualified Data.HashMap.Strict as HM
@@ -20,6 +18,7 @@ import Data.Vector (toList)
 import qualified Data.Vector as V
 import Schema
 import TextShow
+import Util
 
 concatUnion :: Eq a => [[a]] -> [a]
 concatUnion = foldl1 union
@@ -33,9 +32,6 @@ nonEmptyJ Null = False
 nonEmptyJ (Object o) | HM.null o = False
 nonEmptyJ (Array a) | V.null a = False
 nonEmptyJ _ = True
-
-maybeNel :: [a] -> Maybe [a]
-maybeNel = find (not . null) . Just
 
 computePaths :: Bool -> Value -> Maybe [JsonPath]
 computePaths _ Null = Just []
@@ -61,10 +57,7 @@ computePaths _ (Object obj) =
   HM.toList .
   HM.mapMaybe id .
   (HM.map (computePaths False)) .
-  (HM.filter nonEmptyJ) $ obj
-
-(|=>) :: Monad f => (a -> f [b]) -> (b -> f [c]) -> a -> f [c]
-(|=>) fx fy v = fmap concat (fx >=> (mapM fy) $ v) 
+  (HM.filter nonEmptyJ) $ obj 
 
 navigate :: JsonPath -> Value -> Maybe [Value]
 navigate path =
