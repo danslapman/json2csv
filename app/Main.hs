@@ -50,6 +50,8 @@ computeHeaderMultiline handle = do
 parseAndWriteEntry :: [JsonPath] -> Handle -> Handle -> IO ()
 parseAndWriteEntry header hIn hOut = do
   line <- fmap LBS.fromStrict $ BS.hGetLine hIn
+  let schema = toSchema header
   let (Just parsed) = decode line :: Maybe Value
+  print $ extract schema parsed
   let lines = sequence $ fmap ((fromMaybe [Null]) . ($ parsed) . (navigate)) header
   forM_ lines $ \line -> TIO.hPutStrLn hOut $ mkSepString . (fmap showj) $ line

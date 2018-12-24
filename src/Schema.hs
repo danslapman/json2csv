@@ -59,6 +59,7 @@ data JsonValueTree =
   ValueRoot JsonPathElement [JsonValueTree]
   | SingleValue JsonPathElement Value
   | ValueArray [Value]
+  deriving (Eq, Show, Typeable)
 
 type JsonTree = [JsonValueTree]
 
