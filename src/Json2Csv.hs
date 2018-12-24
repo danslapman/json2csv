@@ -59,5 +59,5 @@ showj Null = ""
 showj (Bool b) = showt b
 showj (Number n) = pack $ show n
 showj (String s) = s
-showj (Array _) = "[array]"
-showj (Object _) = "{object}"
+showj (Array _) = ""
+showj (Object _) =""
