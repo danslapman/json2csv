@@ -60,4 +60,4 @@ showj (Bool b) = showt b
 showj (Number n) = pack $ show n
 showj (String s) = s
 showj (Array _) = ""
-showj (Object _) =""
+showj (Object _) = ""
