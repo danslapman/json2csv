@@ -47,20 +47,14 @@ main = do
   header <- bracket (openFile jsonFile ReadMode)
             hClose
             computeHeaderMultiline
-  bracket (openFile jsonFile ReadMode)
-          hClose
-          (\hIn ->
-            bracket (openFile outFile WriteMode)
-            hClose
-            (\hOut -> do 
-              TIO.hPutStrLn hOut $ mkSepString $ fmap jsonPathText header
-              whileM_ (fmap not $ hIsEOF hIn) (parseAndWriteEntry header hIn hOut)
-            )
-          )
-
+  withFile jsonFile ReadMode $ \hIn ->
+    withFile outFile WriteMode $ \hOut -> do
+      TIO.hPutStrLn hOut $ mkSepString $ fmap jsonPathText header
+      whileM_ (fmap not $ hIsEOF hIn) (parseAndWriteEntry header hIn hOut)
+            
 convertSingle :: Value -> [Text]
 convertSingle json = do
-  let header = computePaths True json
+  let (Just header) = computePaths True json
   let entries = json ^.. values
   let makeLine val = mkSepString $ fmap (showj . (fromMaybe Null) . ($ val) . (navigate)) header
   (mkSepString $ fmap jsonPathText header) : (fmap makeLine entries)
@@ -70,7 +64,8 @@ computeHeaderMultiline handle = do
   lines <- whileM (fmap not $ hIsEOF handle) $ do
       line <- fmap LBS.fromStrict $ BS.hGetLine handle
       let (Just parsed) = decode line :: Maybe Value
-      return $ computePaths True parsed
+      let (Just header) = computePaths True parsed
+      return $ header
   return $ foldl union [] lines
 
 parseAndWriteEntry :: [JSONPath] -> Handle -> Handle -> IO ()
