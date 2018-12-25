@@ -1,4 +1,5 @@
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Schema where
 
@@ -6,11 +7,13 @@ import Control.Lens ((^?), (^..))
 import Data.Aeson
 import Data.Aeson.Lens
 import Data.Maybe hiding (mapMaybe)
-import Data.Text (Text)
+import Data.HashMap.Strict (HashMap)
+import qualified Data.HashMap.Strict as HM
+import Data.Text (Text, intercalate)
 import Data.Traversable
 import Data.Typeable (Typeable)
-import Data.Vector
-import Prelude hiding (any, foldl)
+import Data.Vector as V
+import Prelude hiding (any, foldl, head)
 import Util
 import VecPats
 
@@ -46,12 +49,12 @@ toSchemaTree =
         ((PathNode el V_), h:::tail) | el == h ->
           PathNode el $ singleton $ toSchemaTree tail
         ((PathNode el branches), h:::tail) | el == h -> 
-          PathNode el $ branches #+ tail
+          PathNode el $ uniq $ branches #+ tail
         (PathEnd, path) -> toSchemaTree path
         (t, _) -> t
   in
     if any (hasSameRoot path) schema
-    then fmap (append path) schema
+    then (append path) <$> schema
     else schema `snoc` toSchemaTree path
 
 toSchema :: Vector JsonPath -> JsonSchema
@@ -86,3 +89,37 @@ extract schema value =
                 nodeTrees = (\val -> (mapMaybe id) $ ($val) <$> childrenExtractors) <$> nodeValues
             in TreeArray <$> maybeNev nodeTrees
   in (mapMaybe id) $ ((extractTree value) <$> schema)
+
+genMaps :: JsonPath -> JsonValueTree -> Vector (HashMap Text Value)
+genMaps jp jvt =
+  case jvt of
+    ValueRoot jpe trees -> vconcat $ genMaps (singleton jpe) <$> trees
+    SingleValue jpe value -> singleton $ HM.singleton (jsonPathText $ jp `snoc` jpe) value
+    ValueArray values -> HM.singleton (jsonPathText $ jp `snoc` Iterator) <$> values
+    TreeArray trees -> xfold $ ((xfold . (genMaps (Iterator `cons` jp) <$>)) <$> trees)
+      --(xfold . (genMaps jp <$>)) $ head trees
+
+jsonRoot :: JsonPath
+jsonRoot = singleton Iterator    
+
+generateTuples :: JsonTree -> Vector (HashMap Text Value)
+generateTuples jTree = xfold $ (genMaps jsonRoot) <$> jTree
+
+generateTuples1 :: JsonTree -> Vector (Vector (HashMap Text Value))
+generateTuples1 jTree = (genMaps jsonRoot) <$> jTree
+
+jsonPathText :: JsonPath -> Text
+jsonPathText path =
+  let repr = \case
+                Key k -> k
+                Iterator -> "$"
+  in intercalate "." $ toList $ fmap repr path
+
+xseq :: (a -> a -> a) -> Vector a -> Vector a -> Vector a
+xseq f va vb = do
+  a <- va
+  b <- vb
+  return $ f a b
+
+xfold :: Vector (Vector (HashMap Text Value)) -> Vector (HashMap Text Value)
+xfold = foldl (xseq HM.union) empty

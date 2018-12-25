@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE LambdaCase #-}
 
-module Json2Csv (computePaths, navigate, jsonPathText, showj) where
+module Json2Csv (computePaths, navigate, showj) where
 
 import Control.Lens ((^?), (^..))
 import Data.Aeson
@@ -60,13 +60,6 @@ navigate path =
                   Iterator -> maybeNev . fromList . (^.. values) :: Value -> Maybe (Vector Value)
       (firstStep ::: otherSteps) = (fmap stepFwd path)
   in foldl (|=>) firstStep otherSteps
-
-jsonPathText :: JsonPath -> Text
-jsonPathText path =
-  let repr = \case
-               Key k -> k
-               Iterator -> "$"
-  in intercalate "." $ toList $ fmap repr path
 
 showj :: Value -> Text
 showj Null = ""

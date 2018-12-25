@@ -54,6 +54,9 @@ parseAndWriteEntry header hIn hOut = do
   line <- fmap LBS.fromStrict $ BS.hGetLine hIn
   let schema = toSchema header
   let (Just parsed) = decode line :: Maybe Value
-  print $ extract schema parsed
-  let lines = sequence $ fmap ((fromMaybe (singleton Null)) . ($ parsed) . (navigate)) header
-  forM_ lines $ \line -> TIO.hPutStrLn hOut $ mkSepString . (fmap showj) $ line
+  let tree = extract schema parsed
+  print schema
+  print tree
+  print $ generateTuples tree
+  -- let lines = sequence $ fmap ((fromMaybe (singleton Null)) . ($ parsed) . (navigate)) header
+  -- forM_ lines $ \line -> TIO.hPutStrLn hOut $ mkSepString . (fmap showj) $ line
