@@ -93,20 +93,16 @@ extract schema value =
 genMaps :: JsonPath -> JsonValueTree -> Vector (HashMap Text Value)
 genMaps jp jvt =
   case jvt of
-    ValueRoot jpe trees -> vconcat $ genMaps (singleton jpe) <$> trees
+    ValueRoot jpe trees -> vconcat $ genMaps (jp `snoc` jpe) <$> trees
     SingleValue jpe value -> singleton $ HM.singleton (jsonPathText $ jp `snoc` jpe) value
-    ValueArray values -> HM.singleton (jsonPathText $ jp `snoc` Iterator) <$> values
-    TreeArray trees -> xfold $ ((xfold . (genMaps (Iterator `cons` jp) <$>)) <$> trees)
-      --(xfold . (genMaps jp <$>)) $ head trees
-
-jsonRoot :: JsonPath
-jsonRoot = singleton Iterator    
+    ValueArray values -> HM.singleton (jsonPathText jp) <$> values
+    TreeArray trees -> xfold $ ((xfold . (genMaps (jp `snoc` Iterator) <$>)) <$> trees)
 
 generateTuples :: JsonTree -> Vector (HashMap Text Value)
-generateTuples jTree = xfold $ (genMaps jsonRoot) <$> jTree
+generateTuples jTree = xfold $ (genMaps empty) <$> jTree
 
 generateTuples1 :: JsonTree -> Vector (Vector (HashMap Text Value))
-generateTuples1 jTree = (genMaps jsonRoot) <$> jTree
+generateTuples1 jTree = (genMaps empty) <$> jTree
 
 jsonPathText :: JsonPath -> Text
 jsonPathText path =
@@ -116,6 +112,8 @@ jsonPathText path =
   in intercalate "." $ toList $ fmap repr path
 
 xseq :: (a -> a -> a) -> Vector a -> Vector a -> Vector a
+xseq _ va V_ = va
+xseq _ V_ vb = vb
 xseq f va vb = do
   a <- va
   b <- vb
