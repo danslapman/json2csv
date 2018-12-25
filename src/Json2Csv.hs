@@ -7,7 +7,7 @@ import Control.Lens ((^?), (^..))
 import Data.Aeson
 import Data.Aeson.Lens
 import Data.Maybe (catMaybes)
-import Data.List (union, null)
+import Data.List (null)
 import Data.List.Index
 import qualified Data.HashMap.Strict as HM
 import Data.Semigroup
@@ -19,9 +19,6 @@ import qualified Data.Vector as V
 import Schema
 import TextShow
 import Util
-
-concatUnion :: Eq a => [[a]] -> [a]
-concatUnion = foldl1 union
 
 prepend :: JsonPathElement -> [JsonPath] -> [JsonPath]
 prepend prefix [] = [prefix : []]
