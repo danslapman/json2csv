@@ -7,61 +7,58 @@ import Control.Lens ((^?), (^..))
 import Data.Aeson
 import Data.Aeson.Lens
 import Data.Maybe (catMaybes)
-import Data.List (null)
-import Data.List.Index
 import qualified Data.HashMap.Strict as HM
 import Data.Semigroup
 import Data.Text (Text, intercalate, pack)
 import Data.Traversable
 import Data.Typeable (Typeable)
-import Data.Vector (toList)
-import qualified Data.Vector as V
+import Data.Vector
+import Prelude hiding (concatMap, foldl, null)
 import Schema
-import TextShow
+import TextShow hiding (singleton)
 import Util
+import VecPats
 
-prepend :: JsonPathElement -> [JsonPath] -> [JsonPath]
-prepend prefix [] = [prefix : []]
-prepend prefix path = fmap (\p -> prefix : p) path
+prepend :: JsonPathElement -> Vector JsonPath -> Vector JsonPath
+prepend prefix V_ = singleton $ singleton prefix
+prepend prefix path = fmap (\p -> prefix `cons` p) path
 
 nonEmptyJ :: Value -> Bool
 nonEmptyJ Null = False
 nonEmptyJ (Object o) | HM.null o = False
-nonEmptyJ (Array a) | V.null a = False
+nonEmptyJ (Array a) | null a = False
 nonEmptyJ _ = True
 
-computePaths :: Bool -> Value -> Maybe [JsonPath]
-computePaths _ Null = Just []
-computePaths _ (Bool _) = Just []
-computePaths _ (Number _) = Just []
-computePaths _ (String _) = Just []
+computePaths :: Bool -> Value -> Maybe (Vector JsonPath)
+computePaths _ Null = Just empty
+computePaths _ (Bool _) = Just empty
+computePaths _ (Number _) = Just empty
+computePaths _ (String _) = Just empty
 computePaths False (Array arr) =
-  maybeNel .
-  concat . 
+  maybeNev .
+  vconcat . 
   (imap (\_ -> prepend Iterator)) .
-  catMaybes . 
-  (fmap (computePaths False)) . 
-  toList $ arr
+  (mapMaybe id) . 
+  (fmap (computePaths False)) $ arr
 computePaths True (Array arr) = 
-  maybeNel . 
+  maybeNev . 
   concatUnion . 
-  catMaybes . 
-  (fmap (computePaths False)) . 
-  toList $ arr
+  (mapMaybe id) . 
+  (fmap (computePaths False)) $ arr
 computePaths _ (Object obj) =
-  maybeNel .
+  maybeNev .
   concatMap (uncurry (\key -> (prepend (Key key)))) . 
-  HM.toList .
+  hmToVector .
   HM.mapMaybe id .
   (HM.map (computePaths False)) .
   (HM.filter nonEmptyJ) $ obj 
 
-navigate :: JsonPath -> Value -> Maybe [Value]
+navigate :: JsonPath -> Value -> Maybe (Vector Value)
 navigate path =
   let stepFwd = \case
-                  Key k -> fmap (:[]) . (^? key k) :: Value -> Maybe [Value]
-                  Iterator -> maybeNel . (^.. values) :: Value -> Maybe [Value]
-      (firstStep : otherSteps) = (fmap stepFwd path)
+                  Key k -> fmap singleton . (^? key k) :: Value -> Maybe (Vector Value)
+                  Iterator -> maybeNev . fromList . (^.. values) :: Value -> Maybe (Vector Value)
+      (firstStep ::: otherSteps) = (fmap stepFwd path)
   in foldl (|=>) firstStep otherSteps
 
 jsonPathText :: JsonPath -> Text
@@ -69,7 +66,7 @@ jsonPathText path =
   let repr = \case
                Key k -> k
                Iterator -> "$"
-  in intercalate "." $ fmap repr path
+  in intercalate "." $ toList $ fmap repr path
 
 showj :: Value -> Text
 showj Null = ""

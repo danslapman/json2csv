@@ -2,7 +2,7 @@
 {-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE NoImplicitPrelude #-}
 
-module VecPats (pattern (:::)) where
+module VecPats (pattern (:::), pattern V_) where
 
 import Data.Maybe
 import Data.Vector
@@ -13,3 +13,4 @@ uncons v = if null v
   else Just (unsafeHead v, unsafeTail v)
 
 pattern x ::: xs <- (uncons -> Just (x, xs))
+pattern V_ <- (uncons -> Nothing)
