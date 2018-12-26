@@ -14,9 +14,6 @@ maybeNev = find (not . null) . Just
 vconcat :: Vector (Vector a) -> Vector a
 vconcat = foldl (++) empty
 
-(|=>) :: Monad f => (a -> f (Vector b)) -> (b -> f (Vector c)) -> a -> f (Vector c)
-(|=>) fx fy v = fmap vconcat (fx >=> (mapM fy) $ v)
-
 vunion :: Eq a => Vector a -> Vector a -> Vector a
 vunion =
   let setadd vec a | not $ elem a vec = vec `snoc` a

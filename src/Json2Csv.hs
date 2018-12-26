@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE LambdaCase #-}
 
-module Json2Csv (computePaths, navigate, showj) where
+module Json2Csv (computePaths, showj) where
 
 import Control.Lens ((^?), (^..))
 import Data.Aeson
@@ -52,14 +52,6 @@ computePaths _ (Object obj) =
   HM.mapMaybe id .
   (HM.map (computePaths False)) .
   (HM.filter nonEmptyJ) $ obj 
-
-navigate :: JsonPath -> Value -> Maybe (Vector Value)
-navigate path =
-  let stepFwd = \case
-                  Key k -> fmap singleton . (^? key k) :: Value -> Maybe (Vector Value)
-                  Iterator -> maybeNev . fromList . (^.. values) :: Value -> Maybe (Vector Value)
-      (firstStep ::: otherSteps) = (fmap stepFwd path)
-  in foldl (|=>) firstStep otherSteps
 
 showj :: Value -> Text
 showj Null = ""
