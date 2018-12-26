@@ -6,7 +6,7 @@ import Data.List (union)
 import qualified Data.HashMap.Strict as HM
 import Data.Maybe (Maybe(Just))
 import Data.Vector hiding (find)
-import Prelude hiding ((++), concat, foldl, foldl1, null, mapM)
+import Prelude hiding ((++), concat, elem, foldl, foldl1, null, mapM)
 
 maybeNev :: Vector a -> Maybe (Vector a)
 maybeNev = find (not . null) . Just
@@ -18,7 +18,10 @@ vconcat = foldl (++) empty
 (|=>) fx fy v = fmap vconcat (fx >=> (mapM fy) $ v)
 
 vunion :: Eq a => Vector a -> Vector a -> Vector a
-vunion = (uniq .) . (++)
+vunion =
+  let setadd vec a | not $ elem a vec = vec `snoc` a
+      setadd vec _ = vec
+  in foldl setadd 
 
 concatUnion :: Eq a => Vector (Vector a) -> Vector a
 concatUnion = foldl1 vunion
