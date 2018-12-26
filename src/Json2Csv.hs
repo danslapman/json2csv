@@ -37,7 +37,7 @@ computePaths _ (String _) = Just empty
 computePaths False (Array arr) =
   maybeNev .
   vconcat . 
-  (imap (\_ -> prepend Iterator)) .
+  (fmap (prepend Iterator)) .
   (mapMaybe id) . 
   (fmap (computePaths False)) $ arr
 computePaths True (Array arr) = 
