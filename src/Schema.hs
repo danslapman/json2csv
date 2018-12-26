@@ -96,13 +96,10 @@ genMaps jp jvt =
     ValueRoot jpe trees -> vconcat $ genMaps (jp `snoc` jpe) <$> trees
     SingleValue jpe value -> singleton $ HM.singleton (jsonPathText $ jp `snoc` jpe) value
     ValueArray values -> HM.singleton (jsonPathText jp) <$> values
-    TreeArray trees -> xfold $ ((xfold . (genMaps (jp `snoc` Iterator) <$>)) <$> trees)
+    TreeArray trees -> vconcat $ ((xfold . (genMaps (jp `snoc` Iterator) <$>)) <$> trees)
 
 generateTuples :: JsonTree -> Vector (HashMap Text Value)
 generateTuples jTree = xfold $ (genMaps empty) <$> jTree
-
-generateTuples1 :: JsonTree -> Vector (Vector (HashMap Text Value))
-generateTuples1 jTree = (genMaps empty) <$> jTree
 
 jsonPathText :: JsonPath -> Text
 jsonPathText path =
