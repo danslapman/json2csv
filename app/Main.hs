@@ -3,11 +3,9 @@
 module Main where
 
 import Control.Exception
-import Control.Lens ((^..))
 import Control.Monad
 import Control.Monad.Loops
 import Data.Aeson
-import Data.Aeson.Lens
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as LBS
 import Data.Foldable (foldl, toList)
