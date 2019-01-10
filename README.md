@@ -12,7 +12,7 @@ then just execute `stack build`
 
 ### Usage
 
-`json2csv-exe in.ndjson out.csv`
+`json2csv-exe in.ndjson out.csv +RTS -N`
 
 ### Examples
 
