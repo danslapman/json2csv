@@ -10,6 +10,7 @@ import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as LBS
 import Data.Foldable (foldl, toList)
 import qualified Data.HashMap.Strict as HM
+import Data.IORef
 import Data.Maybe
 import Data.Text (Text, intercalate)
 import qualified Data.Text.IO as TIO
@@ -42,9 +43,14 @@ main = do
 
 computeHeaderMultiline :: Handle -> IO (Deque JsonPath)
 computeHeaderMultiline handle = do
+  lineNnumber <- newIORef (0 :: Int)
   lines <- whileM (fmap not $ hIsEOF handle) $ do
+      modifyIORef lineNnumber (1+)
       line <- fmap LBS.fromStrict $ BS.hGetLine handle
-      let (Just parsed) = decode line :: Maybe Value
+      ln <- readIORef lineNnumber
+      parsed <- case decode line of
+                         Just value -> pure value
+                         Nothing -> fail $ "Can't parse JSON at line " ++ (show ln)
       let (Just header) = computePaths True parsed
       return $ header
   return $ foldl union empty $ fromList lines
