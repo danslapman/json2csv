@@ -8,10 +8,10 @@ import Control.Monad.Loops
 import Data.Aeson
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as LBS
+import Data.Either
 import Data.Foldable (foldl, toList)
 import qualified Data.HashMap.Strict as HM
 import Data.IORef
-import Data.Maybe
 import Data.Text (Text, intercalate)
 import qualified Data.Text.IO as TIO
 import Deque
@@ -48,9 +48,9 @@ computeHeaderMultiline handle = do
       modifyIORef lineNnumber (1+)
       line <- fmap LBS.fromStrict $ BS.hGetLine handle
       ln <- readIORef lineNnumber
-      parsed <- case decode line of
-                         Just value -> pure value
-                         Nothing -> fail $ "Can't parse JSON at line " ++ (show ln)
+      parsed <- case eitherDecode' line of
+                         Right value -> pure value
+                         Left err -> fail $ "Can't parse JSON at line " ++ (show ln) ++ ": " ++ err
       let (Just header) = computePaths True parsed
       return $ header
   return $ foldl union empty $ fromList lines
