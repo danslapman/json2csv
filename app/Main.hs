@@ -5,9 +5,6 @@ module Main where
 import Control.Exception
 import Control.Monad
 import Control.Monad.Loops
-import Data.Aeson
-import qualified Data.ByteString as BS
-import qualified Data.ByteString.Lazy as LBS
 import Data.Either
 import Data.Foldable (foldl, toList)
 import qualified Data.HashMap.Strict as HM
@@ -21,6 +18,7 @@ import Prelude hiding (foldl, sequence)
 import Schema
 import System.Environment
 import System.IO
+import Text.JSON
 
 separator :: Text
 separator = ";"
@@ -46,20 +44,20 @@ computeHeaderMultiline handle = do
   lineNnumber <- newIORef (0 :: Int)
   lines <- whileM (fmap not $ hIsEOF handle) $ do
       modifyIORef lineNnumber (1+)
-      line <- fmap LBS.fromStrict $ BS.hGetLine handle
+      line <- hGetLine handle
       ln <- readIORef lineNnumber
-      parsed <- case eitherDecode' line of
-                         Right value -> pure value
-                         Left err -> fail $ "Can't parse JSON at line " ++ (show ln) ++ ": " ++ err
+      parsed <- case decode line of
+                         Ok value -> pure value
+                         Error err -> fail $ "Can't parse JSON at line " ++ (show ln) ++ ": " ++ err
       let (Just header) = computePaths True parsed
       return $ header
   return $ foldl union empty $ fromList lines
 
 parseAndWriteEntry :: JsonSchema -> Deque Text -> Handle -> Handle -> IO ()
 parseAndWriteEntry schema columns hIn hOut = do
-  line <- fmap LBS.fromStrict $ BS.hGetLine hIn
-  let (Just parsed) = decode line :: Maybe Value
+  line <- hGetLine hIn
+  let (Ok parsed) = decode line
   let tree = extract schema parsed
   let tuples = generateTuples tree
-  let lines = ((<$> columns) . flip (HM.lookupDefault Null)) <$> tuples
+  let lines = ((<$> columns) . flip (HM.lookupDefault JSNull)) <$> tuples
   forM_ lines (TIO.hPutStrLn hOut . mkSepString . fmap showj)

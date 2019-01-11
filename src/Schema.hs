@@ -4,10 +4,7 @@
 module Schema where
 
 import Control.Applicative (pure)
-import Control.Lens ((^?), (^..))
 import Control.Monad (join)
-import Data.Aeson
-import Data.Aeson.Lens
 import Data.Foldable (any, foldl, toList)
 import Data.Maybe hiding (mapMaybe)
 import Data.HashMap.Strict (HashMap)
@@ -18,6 +15,7 @@ import Deque as DQ
 import DequePatterns
 import DequeUtils
 import Prelude hiding (any, foldl, head)
+import Text.JSON
 
 data JsonPathElement = 
   Key Text
@@ -64,35 +62,50 @@ toSchema = foldl (#+) empty
 
 data JsonValueTree =
   ValueRoot JsonPathElement (Deque JsonValueTree)
-  | SingleValue JsonPathElement Value
-  | ValueArray (Deque Value)
+  | SingleValue JsonPathElement JSValue
+  | ValueArray (Deque JSValue)
   | TreeArray (Deque (Deque JsonValueTree))
   deriving (Eq, Show, Typeable)
 
 type JsonTree = Deque JsonValueTree
 
-extract :: JsonSchema -> Value -> JsonTree
+extractKey :: Text -> JSValue -> Maybe JSValue
+extractKey key jsv =
+  case jsv of
+    JSObject jso ->
+      case valFromObj (show key) jso of
+        Ok j -> Just j
+        Error _ -> Nothing
+    otherwise -> Nothing
+
+extractValues :: JSValue -> [JSValue]
+extractValues jsv =
+  case jsv of
+    JSArray values -> values
+    otherwise -> []
+
+extract :: JsonSchema -> JSValue -> JsonTree
 extract schema value =
   let extractTree v schemaTree = 
         case schemaTree of
           PathEnd -> Nothing
           (PathNode el (PathEnd :|| D_)) ->
             case el of
-              Key k -> SingleValue el <$> v ^? key k
-              Iterator -> ValueArray <$> (maybeNeq $ fromList $ v ^.. values)
+              Key k -> SingleValue el <$> extractKey k v
+              Iterator -> ValueArray <$> (maybeNeq $ fromList $ extractValues v)
           (PathNode (el @ (Key k)) children) ->
-            let keyValue = (v ^? key k)
+            let keyValue = extractKey k v
                 childrenExtractors = flip extractTree <$> children
                 valueTrees = (\val -> (mapMaybe id) $ ($val) <$> childrenExtractors) <$> keyValue
             in ValueRoot el <$> valueTrees
           (PathNode Iterator children) ->
-            let nodeValues = fromList $ v ^.. values
+            let nodeValues = fromList $ extractValues v
                 childrenExtractors = flip extractTree <$> children
                 nodeTrees = (\val -> (mapMaybe id) $ ($val) <$> childrenExtractors) <$> nodeValues
             in TreeArray <$> maybeNeq nodeTrees
   in (mapMaybe id) $ ((extractTree value) <$> schema)
 
-genMaps :: JsonPath -> JsonValueTree -> Deque (HashMap Text Value)
+genMaps :: JsonPath -> JsonValueTree -> Deque (HashMap Text JSValue)
 genMaps jp jvt =
   case jvt of
     ValueRoot jpe trees -> xfold $ genMaps (jpe `snoc` jp) <$> trees
@@ -100,7 +113,7 @@ genMaps jp jvt =
     ValueArray values -> HM.singleton (jsonPathText (Iterator `snoc` jp)) <$> values
     TreeArray trees -> join $ ((xfold . (genMaps (Iterator `snoc` jp) <$>)) <$> trees)
 
-generateTuples :: JsonTree -> Deque (HashMap Text Value)
+generateTuples :: JsonTree -> Deque (HashMap Text JSValue)
 generateTuples jTree = xfold $ (genMaps empty) <$> jTree
 
 jsonPathText :: JsonPath -> Text
@@ -118,5 +131,5 @@ xseq f va vb = do
   b <- vb
   return $ f a b
 
-xfold :: Deque (Deque (HashMap Text Value)) -> Deque (HashMap Text Value)
+xfold :: Deque (Deque (HashMap Text JSValue)) -> Deque (HashMap Text JSValue)
 xfold = foldl (xseq HM.union) empty

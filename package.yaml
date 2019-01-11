@@ -25,11 +25,9 @@ dependencies:
 - text
 - text-show
 - bytestring
-- aeson
+- json
 - vector
 - unordered-containers
-- lens
-- lens-aeson
 - monad-loops
 - deque
 
