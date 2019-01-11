@@ -3,16 +3,12 @@
 module Json2Csv (computePaths, showj) where
 
 import Control.Applicative (pure)
-import Control.Lens ((^?), (^..))
 import Control.Monad (join)
 import Data.Aeson
-import Data.Aeson.Lens
-import Data.Foldable (concatMap, foldl1)
+import Data.Foldable (foldl1)
 import Data.Maybe (catMaybes)
 import qualified Data.HashMap.Strict as HM
-import Data.Semigroup
-import Data.Text (Text, intercalate, pack)
-import Data.Traversable
+import Data.Text (Text, pack)
 import Data.Typeable (Typeable)
 import qualified Data.Vector as V
 import Deque hiding (prepend)
