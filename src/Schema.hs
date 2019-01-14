@@ -1,5 +1,6 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE FlexibleInstances #-}
 
 module Schema where
 
@@ -25,6 +26,12 @@ data JsonPathElement =
   deriving (Eq, Show, Typeable, Ord)
 
 type JsonPath = Deque JsonPathElement
+
+instance Ord (Deque JsonPathElement) where
+  compare lhs rhs =
+    let lhsl = toList lhs
+        rhsl = toList rhs
+    in lhsl `compare` rhsl
 
 data JsonSchemaTree =
   PathNode JsonPathElement (Deque JsonSchemaTree)

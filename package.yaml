@@ -32,6 +32,7 @@ dependencies:
 - lens-aeson
 - monad-loops
 - deque
+- set-monad
 
 library:
   source-dirs: src
