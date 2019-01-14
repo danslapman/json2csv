@@ -53,7 +53,7 @@ computeHeaderMultiline handle = do
                          Left err -> fail $ "Can't parse JSON at line " ++ (show ln) ++ ": " ++ err
       let (Just header) = computePaths True parsed
       return $ header
-  return $ foldl' union empty $ fromList lines
+  return $ foldl' union empty lines
 
 parseAndWriteEntry :: JsonSchema -> Deque Text -> Handle -> Handle -> IO ()
 parseAndWriteEntry schema columns hIn hOut = do
