@@ -1,15 +1,15 @@
 module DequeUtils where
 
 import Control.Monad ((>=>))
-import Data.Foldable (foldl, foldl1, find, toList)
+import Data.Foldable (foldl, find, toList)
 import qualified Data.List as L
 import qualified Data.HashMap.Strict as HM
 import Data.Maybe (Maybe(Just))
+import qualified Data.Maybe as Mb (mapMaybe)
 import Data.Traversable (mapM)
 import Data.Vector (Vector)
 import qualified Data.Vector as V 
 import Deque
-import DequePatterns
 import Prelude hiding ((++), concat, elem, foldl, foldl1, null, mapM)
 
 null :: Deque a -> Bool
@@ -40,10 +40,10 @@ uniq = fromList . L.nub . toList
 
 mapMaybe :: (a -> Maybe b) -> Deque a -> Deque b
 mapMaybe _ (Deque [] []) = empty
-mapMaybe pred (h :|| t) =
-  case pred h of
-    Just nb -> nb `cons` mapMaybe pred t
-    Nothing ->  mapMaybe pred t
+mapMaybe pred (Deque cl sl) =
+  let ncl = Mb.mapMaybe pred cl
+      nsl = Mb.mapMaybe pred sl
+  in Deque ncl nsl
 
 fromVector :: Vector a -> Deque a
 fromVector = fromList . V.toList
