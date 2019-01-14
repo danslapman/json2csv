@@ -1,8 +1,8 @@
 module DequeUtils where
 
 import Control.Monad ((>=>))
-import Data.Foldable (elem, foldl, foldl1, find, toList)
-import Data.List (nub)
+import Data.Foldable (foldl, foldl1, find, toList)
+import qualified Data.List as L
 import qualified Data.HashMap.Strict as HM
 import Data.Maybe (Maybe(Just))
 import Data.Traversable (mapM)
@@ -19,6 +19,10 @@ null _ = False
 empty :: Deque a
 empty = Deque [] []
 
+elem :: Eq a => a -> Deque a -> Bool
+elem el (Deque cl sl) =
+  L.elem el cl || L.elem el sl
+
 maybeNeq :: Deque a -> Maybe (Deque a)
 maybeNeq = find (not . null) . Just
 
@@ -32,7 +36,7 @@ hmToDeque :: HM.HashMap a b -> Deque (a,b)
 hmToDeque = fromList . HM.toList
 
 uniq :: Eq a => Deque a -> Deque a
-uniq = fromList . nub . toList
+uniq = fromList . L.nub . toList
 
 mapMaybe :: (a -> Maybe b) -> Deque a -> Deque b
 mapMaybe _ (Deque [] []) = empty
