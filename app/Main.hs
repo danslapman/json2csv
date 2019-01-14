@@ -9,7 +9,7 @@ import Data.Aeson
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as LBS
 import Data.Either
-import Data.Foldable (foldl, toList)
+import Data.Foldable (foldl', toList)
 import qualified Data.HashMap.Strict as HM
 import Data.IORef
 import Data.Text (Text, intercalate)
@@ -17,7 +17,7 @@ import qualified Data.Text.IO as TIO
 import Deque
 import DequeUtils
 import Json2Csv
-import Prelude hiding (foldl, sequence)
+import Prelude hiding (foldl, foldl', sequence)
 import Schema
 import System.Environment
 import System.IO
@@ -53,7 +53,7 @@ computeHeaderMultiline handle = do
                          Left err -> fail $ "Can't parse JSON at line " ++ (show ln) ++ ": " ++ err
       let (Just header) = computePaths True parsed
       return $ header
-  return $ foldl union empty $ fromList lines
+  return $ foldl' union empty $ fromList lines
 
 parseAndWriteEntry :: JsonSchema -> Deque Text -> Handle -> Handle -> IO ()
 parseAndWriteEntry schema columns hIn hOut = do

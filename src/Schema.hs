@@ -8,7 +8,7 @@ import Control.Lens ((^?), (^..))
 import Control.Monad (join)
 import Data.Aeson
 import Data.Aeson.Lens
-import Data.Foldable (any, foldl, toList)
+import Data.Foldable (any, foldl', toList)
 import Data.Maybe hiding (mapMaybe)
 import Data.HashMap.Strict (HashMap)
 import qualified Data.HashMap.Strict as HM
@@ -17,7 +17,7 @@ import Data.Typeable (Typeable)
 import Deque as DQ
 import DequePatterns
 import DequeUtils
-import Prelude hiding (any, foldl, head)
+import Prelude hiding (any, foldl, foldl', head)
 
 data JsonPathElement = 
   Key Text
@@ -60,7 +60,7 @@ toSchemaTree =
     else toSchemaTree path `snoc` schema
 
 toSchema :: Deque JsonPath -> JsonSchema
-toSchema = foldl (#+) empty
+toSchema = foldl' (#+) empty
 
 data JsonValueTree =
   ValueRoot JsonPathElement (Deque JsonValueTree)
@@ -119,4 +119,4 @@ xseq f va vb = do
   return $ f a b
 
 xfold :: Deque (Deque (HashMap Text Value)) -> Deque (HashMap Text Value)
-xfold = foldl (xseq HM.union) empty
+xfold = foldl' (xseq HM.union) empty
