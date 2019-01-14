@@ -39,14 +39,14 @@ main = do
       hSetEncoding hIn utf8
       hSetEncoding hOut utf8
       TIO.hPutStrLn hOut $ mkSepString $ columns
-      whileM_ (fmap not $ hIsEOF hIn) (parseAndWriteEntry schema columns hIn hOut)
+      whileM_ (not <$> hIsEOF hIn) (parseAndWriteEntry schema columns hIn hOut)
 
 computeHeaderMultiline :: Handle -> IO (Deque JsonPath)
 computeHeaderMultiline handle = do
   lineNnumber <- newIORef (0 :: Int)
-  lines <- whileM (fmap not $ hIsEOF handle) $ do
+  lines <- whileM (not <$> hIsEOF handle) $ do
       modifyIORef lineNnumber (1+)
-      line <- fmap LBS.fromStrict $ BS.hGetLine handle
+      line <- LBS.fromStrict <$> BS.hGetLine handle
       ln <- readIORef lineNnumber
       parsed <- case eitherDecode' line of
                          Right value -> pure value
@@ -57,7 +57,7 @@ computeHeaderMultiline handle = do
 
 parseAndWriteEntry :: JsonSchema -> Deque Text -> Handle -> Handle -> IO ()
 parseAndWriteEntry schema columns hIn hOut = do
-  line <- fmap LBS.fromStrict $ BS.hGetLine hIn
+  line <- LBS.fromStrict <$> BS.hGetLine hIn
   let (Just parsed) = decode line :: Maybe Value
   let tree = extract schema parsed
   let tuples = generateTuples tree
