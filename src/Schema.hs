@@ -1,6 +1,6 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE DeriveGeneric #-}
 
 module Schema where
 
@@ -12,26 +12,24 @@ import Data.Aeson.Lens
 import Data.Foldable (any, foldl', toList)
 import Data.Maybe hiding (mapMaybe)
 import Data.HashMap.Strict (HashMap)
+import Data.Hashable
 import qualified Data.HashMap.Strict as HM
 import Data.Text (Text, intercalate)
 import Data.Typeable (Typeable)
 import Deque as DQ
 import DequePatterns
 import DequeUtils
+import GHC.Generics (Generic)
 import Prelude hiding (any, foldl, foldl', head)
 
 data JsonPathElement = 
   Key Text
   | Iterator
-  deriving (Eq, Show, Typeable, Ord)
+  deriving (Eq, Show, Typeable, Ord, Generic)
+
+instance Hashable JsonPathElement
 
 type JsonPath = Deque JsonPathElement
-
-instance Ord (Deque JsonPathElement) where
-  compare lhs rhs =
-    let lhsl = toList lhs
-        rhsl = toList rhs
-    in lhsl `compare` rhsl
 
 data JsonSchemaTree =
   PathNode JsonPathElement (Deque JsonSchemaTree)

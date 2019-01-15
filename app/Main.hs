@@ -12,8 +12,8 @@ import Data.Either
 import Data.Foldable (foldl', toList)
 import qualified Data.HashMap.Strict as HM
 import Data.IORef
-import Data.Set.Monad (Set, unions)
-import qualified Data.Set.Monad as SM (toList)
+import Data.HashSet (unions)
+import qualified Data.HashSet as HS (toList)
 import Data.Text (Text, intercalate)
 import qualified Data.Text.IO as TIO
 import Deque
@@ -55,7 +55,7 @@ computeHeaderMultiline handle = do
                          Left err -> fail $ "Can't parse JSON at line " ++ (show ln) ++ ": " ++ err
       let (Just header) = computePaths True parsed
       return $ header
-  return $ fromList . SM.toList . unions $ lines
+  return $ fromList . HS.toList . unions $ lines
 
 parseAndWriteEntry :: JsonSchema -> Deque Text -> Handle -> Handle -> IO ()
 parseAndWriteEntry schema columns hIn hOut = do

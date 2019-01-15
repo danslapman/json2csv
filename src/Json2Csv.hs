@@ -3,24 +3,22 @@
 module Json2Csv (computePaths, showj) where
 
 import Control.Applicative (pure)
-import Control.Monad (join)
 import Data.Aeson
-import Data.Foldable (foldl1)
 import Data.Maybe (catMaybes, mapMaybe)
 import qualified Data.HashMap.Strict as HM
-import Data.Set.Monad
+import Data.HashSet
 import Data.Text (Text, pack)
 import Data.Typeable (Typeable)
 import qualified Data.Vector as V
 import Deque (cons)
-import Prelude hiding (concatMap, foldl, join, null)
-import SetUtils
+import Prelude hiding (concatMap, foldl, join, map, null)
+import HashSetUtils
 import Schema
 import TextShow hiding (singleton)
 
-prepend :: JsonPathElement -> Set JsonPath -> Set JsonPath
-prepend prefix s | null s = pure $ pure prefix
-prepend prefix path = (prefix `cons`) <$> path
+prepend :: JsonPathElement -> HashSet JsonPath -> HashSet JsonPath
+prepend prefix s | null s = singleton $ pure prefix
+prepend prefix path = map (prefix `cons`) path
 
 nonEmptyJ :: Value -> Bool
 nonEmptyJ Null = False
@@ -28,15 +26,15 @@ nonEmptyJ (Object o) | HM.null o = False
 nonEmptyJ (Array a) | V.null a = False
 nonEmptyJ _ = True
 
-computePaths :: Bool -> Value -> Maybe (Set JsonPath)
+computePaths :: Bool -> Value -> Maybe (HashSet JsonPath)
 computePaths _ Null = Just empty
 computePaths _ (Bool _) = Just empty
 computePaths _ (Number _) = Just empty
 computePaths _ (String _) = Just empty
 computePaths False (Array arr) =
   maybeNes .
-  join .
-  fromList .
+  unions .
+  --fromList .
   (fmap (prepend Iterator)) .
   (mapMaybe id) . 
   (fmap (computePaths False)) .
@@ -49,8 +47,9 @@ computePaths True (Array arr) =
   V.toList $ arr
 computePaths _ (Object obj) =
   maybeNes .
-  (uncurry (prepend . Key) =<<) .
-  fromHashMap .
+  unions .
+  (uncurry (prepend . Key) <$>) .
+  HM.toList .
   HM.mapMaybe id .
   (HM.map (computePaths False)) .
   (HM.filter nonEmptyJ) $ obj 

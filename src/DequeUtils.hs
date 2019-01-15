@@ -1,16 +1,24 @@
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE StandaloneDeriving #-}
+
 module DequeUtils where
 
 import Control.Monad ((>=>))
 import Data.Foldable (foldl', find, toList)
 import qualified Data.List as L
 import qualified Data.HashMap.Strict as HM
+import Data.Hashable
 import Data.Maybe (Maybe(Just))
 import qualified Data.Maybe as Mb (mapMaybe)
 import Data.Traversable (mapM)
 import Data.Vector (Vector)
 import qualified Data.Vector as V 
 import Deque
+import GHC.Generics (Generic)
 import Prelude hiding ((++), concat, elem, foldl, foldl', foldl1, null, mapM)
+
+deriving instance Generic (Deque a)
+instance Hashable a => Hashable (Deque a)
 
 null :: Deque a -> Bool
 null (Deque [] []) = True

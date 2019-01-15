@@ -32,7 +32,7 @@ dependencies:
 - lens-aeson
 - monad-loops
 - deque
-- set-monad
+- hashable
 
 library:
   source-dirs: src
