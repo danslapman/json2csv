@@ -2,6 +2,7 @@
 
 module Main where
 
+import Control.DeepSeq
 import Control.Exception
 import Control.Monad
 import Control.Monad.Loops
@@ -12,12 +13,12 @@ import Data.Either
 import Data.Foldable (foldl', toList)
 import qualified Data.HashMap.Strict as HM
 import Data.IORef
-import Data.HashSet (unions)
+import Data.HashSet (HashSet, empty, union, unions)
 import qualified Data.HashSet as HS (toList)
 import Data.Text (Text, intercalate)
 import qualified Data.Text.IO as TIO
 import Deque
-import DequeUtils
+import DequeUtils hiding (empty, union)
 import Json2Csv
 import Prelude hiding (foldl, foldl', sequence)
 import Schema
@@ -45,17 +46,19 @@ main = do
 
 computeHeaderMultiline :: Handle -> IO (Deque JsonPath)
 computeHeaderMultiline handle = do
-  lineNnumber <- newIORef (0 :: Int)
-  lines <- whileM (not <$> hIsEOF handle) $ do
-      modifyIORef lineNnumber (1+)
+  currentLineNumber <- newIORef (0 :: Int)
+  pathSet <- newIORef (empty :: HashSet JsonPath)
+  whileM_ (not <$> hIsEOF handle) $ do
+      modifyIORef' currentLineNumber (1+)
       line <- LBS.fromStrict <$> BS.hGetLine handle
-      ln <- readIORef lineNnumber
+      ln <- readIORef currentLineNumber
       parsed <- case eitherDecode' line of
                          Right value -> pure value
                          Left err -> fail $ "Can't parse JSON at line " ++ (show ln) ++ ": " ++ err
       let (Just header) = computePaths True parsed
-      return $ header
-  return $ fromList . HS.toList . unions $ lines
+      modifyIORef' pathSet (flip union $!! header)
+  pathes <- readIORef pathSet
+  return $ fromList . HS.toList $ pathes
 
 parseAndWriteEntry :: JsonSchema -> Deque Text -> Handle -> Handle -> IO ()
 parseAndWriteEntry schema columns hIn hOut = do

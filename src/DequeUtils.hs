@@ -3,6 +3,7 @@
 
 module DequeUtils where
 
+import Control.DeepSeq
 import Control.Monad ((>=>))
 import Data.Foldable (foldl', find, toList)
 import qualified Data.List as L
@@ -19,6 +20,7 @@ import Prelude hiding ((++), concat, elem, foldl, foldl', foldl1, null, mapM)
 
 deriving instance Generic (Deque a)
 instance Hashable a => Hashable (Deque a)
+instance NFData a => NFData (Deque a)
 
 null :: Deque a -> Bool
 null (Deque [] []) = True

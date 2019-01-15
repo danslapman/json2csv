@@ -5,6 +5,7 @@
 module Schema where
 
 import Control.Applicative (pure)
+import Control.DeepSeq
 import Control.Lens ((^?), (^..))
 import Control.Monad (join)
 import Data.Aeson
@@ -28,6 +29,7 @@ data JsonPathElement =
   deriving (Eq, Show, Typeable, Ord, Generic)
 
 instance Hashable JsonPathElement
+instance NFData JsonPathElement
 
 type JsonPath = Deque JsonPathElement
 

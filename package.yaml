@@ -33,6 +33,7 @@ dependencies:
 - monad-loops
 - deque
 - hashable
+- deepseq
 
 library:
   source-dirs: src
