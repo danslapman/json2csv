@@ -34,6 +34,8 @@ dependencies:
 - deque
 - hashable
 - deepseq
+- optparse-applicative
+- optparse-text
 
 library:
   source-dirs: src

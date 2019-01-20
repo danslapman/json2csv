@@ -20,29 +20,41 @@ import qualified Data.Text.IO as TIO
 import Deque
 import DequeUtils hiding (empty, union)
 import Json2Csv
+import Options.Applicative hiding (empty)
+import Options.Applicative.Text
 import Prelude hiding (foldl, foldl', sequence)
 import Schema
 import System.Environment
 import System.IO
 
-separator :: Text
-separator = ";"
+data Args = Args {
+  jsonFile :: String,
+  csvFile :: String,
+  separator :: Text
+}
 
-mkSepString :: Deque Text -> Text
-mkSepString = intercalate separator . toList
+args :: Parser Args
+args = Args 
+  <$> strArgument (metavar "jsonFile" <> help "Newline-delimited JSON input file name")
+  <*> strArgument (metavar "csvFile" <> help "CSV output file name")
+  <*> textOption (long "separator" <> help "CSV separator" <> showDefault <> value ";")
+
+argsInfo :: ParserInfo Args
+argsInfo = info args fullDesc
 
 main :: IO ()
 main = do
-  (jsonFile : outFile : _) <- getArgs
-  header <- withFile jsonFile ReadMode computeHeaderMultiline
+  arguments <- execParser argsInfo
+  let mkSepString = intercalate (separator arguments) . toList
+  header <- withFile (jsonFile arguments) ReadMode computeHeaderMultiline
   let schema = toSchema header
   let columns = jsonPathText <$> header
-  withFile jsonFile ReadMode $ \hIn ->
-    withFile outFile WriteMode $ \hOut -> do
+  withFile (jsonFile arguments) ReadMode $ \hIn ->
+    withFile (csvFile arguments) WriteMode $ \hOut -> do
       hSetEncoding hIn utf8
       hSetEncoding hOut utf8
       TIO.hPutStrLn hOut $ mkSepString $ columns
-      whileM_ (not <$> hIsEOF hIn) (parseAndWriteEntry schema columns hIn hOut)
+      whileM_ (not <$> hIsEOF hIn) (parseAndWriteEntry mkSepString schema columns hIn hOut)
 
 computeHeaderMultiline :: Handle -> IO (Deque JsonPath)
 computeHeaderMultiline handle = do
@@ -60,8 +72,8 @@ computeHeaderMultiline handle = do
   pathes <- readIORef pathSet
   return $ fromList . HS.toList $ pathes
 
-parseAndWriteEntry :: JsonSchema -> Deque Text -> Handle -> Handle -> IO ()
-parseAndWriteEntry schema columns hIn hOut = do
+parseAndWriteEntry :: (Deque Text -> Text) -> JsonSchema -> Deque Text -> Handle -> Handle -> IO ()
+parseAndWriteEntry mkSepString schema columns hIn hOut = do
   line <- LBS.fromStrict <$> BS.hGetLine hIn
   let (Just parsed) = decode line :: Maybe Value
   let tree = extract schema parsed
