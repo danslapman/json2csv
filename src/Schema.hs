@@ -1,9 +1,11 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE DeriveGeneric #-}
 
 module Schema where
 
 import Control.Applicative (pure)
+import Control.DeepSeq
 import Control.Lens ((^?), (^..))
 import Control.Monad (join)
 import Data.Aeson
@@ -11,18 +13,23 @@ import Data.Aeson.Lens
 import Data.Foldable (any, foldl', toList)
 import Data.Maybe hiding (mapMaybe)
 import Data.HashMap.Strict (HashMap)
+import Data.Hashable
 import qualified Data.HashMap.Strict as HM
 import Data.Text (Text, intercalate)
 import Data.Typeable (Typeable)
 import Deque as DQ
 import DequePatterns
 import DequeUtils
+import GHC.Generics (Generic)
 import Prelude hiding (any, foldl, foldl', head)
 
 data JsonPathElement = 
   Key Text
   | Iterator
-  deriving (Eq, Show, Typeable, Ord)
+  deriving (Eq, Show, Typeable, Ord, Generic)
+
+instance Hashable JsonPathElement
+instance NFData JsonPathElement
 
 type JsonPath = Deque JsonPathElement
 

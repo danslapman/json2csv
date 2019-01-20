@@ -32,6 +32,8 @@ dependencies:
 - lens-aeson
 - monad-loops
 - deque
+- hashable
+- deepseq
 
 library:
   source-dirs: src
