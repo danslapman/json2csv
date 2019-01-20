@@ -36,15 +36,6 @@ elem el (Deque cl sl) =
 maybeNeq :: Deque a -> Maybe (Deque a)
 maybeNeq = find (not . null) . Just
 
-union :: Eq a => Deque a -> Deque a -> Deque a
-union =
-  let setadd deq a | not $ elem a deq = a `snoc` deq
-      setadd deq _ = deq
-  in foldl' setadd
-
-hmToDeque :: HM.HashMap a b -> Deque (a,b)
-hmToDeque = fromList . HM.toList
-
 uniq :: Eq a => Deque a -> Deque a
 uniq = fromList . L.nub . toList
 

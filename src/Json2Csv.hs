@@ -34,7 +34,6 @@ computePaths _ (String _) = Just empty
 computePaths False (Array arr) =
   maybeNes .
   unions .
-  --fromList .
   (fmap (prepend Iterator)) .
   (mapMaybe id) . 
   (fmap (computePaths False)) .
