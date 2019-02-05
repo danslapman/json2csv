@@ -22,10 +22,6 @@ deriving instance Generic (Deque a)
 instance Hashable a => Hashable (Deque a)
 instance NFData a => NFData (Deque a)
 
-null :: Deque a -> Bool
-null (Deque [] []) = True
-null _ = False
-
 empty :: Deque a
 empty = Deque [] []
 
