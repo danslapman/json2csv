@@ -42,7 +42,7 @@ library:
   - -fwarn-incomplete-patterns
 
 executables:
-  json2csv-exe:
+  json2csv:
     main:                Main.hs
     source-dirs:         app
     ghc-options:
