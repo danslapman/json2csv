@@ -13,16 +13,16 @@ import Data.Either
 import Data.Foldable (foldl', toList)
 import qualified Data.HashMap.Strict as HM
 import Data.IORef
-import Data.HashSet (HashSet, empty, union, unions)
+import Data.HashSet (HashSet, empty, intersection, null, union, unions)
 import qualified Data.HashSet as HS (toList)
 import Data.Text (Text, intercalate)
 import qualified Data.Text.IO as TIO
-import Deque
+import Deque (Deque, fromList)
 import DequeUtils hiding (empty, union)
 import Json2Csv
 import Options.Applicative hiding (empty)
 import Options.Applicative.Text
-import Prelude hiding (foldl, foldl', sequence)
+import Prelude hiding (foldl, foldl', null, sequence)
 import Schema
 import System.Environment
 import System.IO
@@ -30,23 +30,34 @@ import System.IO
 data Args = Args {
   jsonFile :: String,
   csvFile :: String,
-  separator :: Text
+  separator :: Text,
+  isect :: Bool
 }
+
+type PathSet = HashSet JsonPath
+type PathSetCombine = PathSet -> PathSet -> PathSet
 
 args :: Parser Args
 args = Args 
   <$> strArgument (metavar "jsonFile" <> help "Newline-delimited JSON input file name")
   <*> strArgument (metavar "csvFile" <> help "CSV output file name")
   <*> textOption (long "separator" <> help "CSV separator" <> showDefault <> value ";")
+  <*> switch (long "intersect" <> short 'i' <> help "\"Inner join\" fields while constructing schema")
 
 argsInfo :: ParserInfo Args
 argsInfo = info args fullDesc
+
+isectOrNonEmpty :: PathSetCombine
+isectOrNonEmpty s1 s2 | null s1 = s2
+isectOrNonEmpty s1 s2 | null s2 = s1
+isectOrNonEmpty s1 s2 = intersection s1 s2
 
 main :: IO ()
 main = do
   arguments <- execParser argsInfo
   let mkSepString = intercalate (separator arguments) . toList
-  header <- withFile (jsonFile arguments) ReadMode computeHeaderMultiline
+  let combine = if (isect arguments) then isectOrNonEmpty else flip union
+  header <- withFile (jsonFile arguments) ReadMode $ computeHeaderMultiline combine
   let schema = toSchema header
   let columns = jsonPathText <$> header
   withFile (jsonFile arguments) ReadMode $ \hIn ->
@@ -56,8 +67,8 @@ main = do
       TIO.hPutStrLn hOut $ mkSepString $ columns
       whileM_ (not <$> hIsEOF hIn) (parseAndWriteEntry mkSepString schema columns hIn hOut)
 
-computeHeaderMultiline :: Handle -> IO (Deque JsonPath)
-computeHeaderMultiline handle = do
+computeHeaderMultiline :: PathSetCombine -> Handle -> IO (Deque JsonPath)
+computeHeaderMultiline combine handle = do
   currentLineNumber <- newIORef (0 :: Int)
   pathSet <- newIORef (empty :: HashSet JsonPath)
   whileM_ (not <$> hIsEOF handle) $ do
@@ -68,7 +79,7 @@ computeHeaderMultiline handle = do
                          Right value -> pure value
                          Left err -> fail $ "Can't parse JSON at line " ++ (show ln) ++ ": " ++ err
       let (Just header) = computePaths True parsed
-      modifyIORef' pathSet (flip union $!! header)
+      modifyIORef' pathSet (combine $!! header)
   pathes <- readIORef pathSet
   return $ fromList . HS.toList $ pathes
 

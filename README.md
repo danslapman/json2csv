@@ -58,3 +58,17 @@ field a0|field b xxx|field c xxx||
 field a1|field b1|field c1||
 field a2|field b2||42.0|field c2
 field a2|field b xxx||42.0|field c2
+
+###### intersection
+
+You can extract only common fields from all lines with `-i` (`--intersect`)
+
+For the same JSON input it will give the following output:
+
+a|b.$.value
+-|---------
+field a0|field b2
+field a0|field b xxx
+field a1|field b1
+field a2|field b2
+field a2|field b xxx
