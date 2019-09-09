@@ -99,23 +99,32 @@ extract schema value =
             in TreeArray <$> maybeNeq nodeTrees
   in (mapMaybe id) $ ((extractTree value) <$> schema)
 
-genMaps :: JsonPath -> JsonValueTree -> Deque (HashMap Text Value)
-genMaps jp jvt =
-  case jvt of
-    ValueRoot jpe trees -> xfold $ genMaps (jpe `snoc` jp) <$> trees
-    SingleValue jpe value -> pure $ HM.singleton (jsonPathText $ jpe `snoc` jp) value
-    ValueArray values -> HM.singleton (jsonPathText (Iterator `snoc` jp)) <$> values
-    TreeArray trees -> join $ ((xfold . (genMaps (Iterator `snoc` jp) <$>)) <$> trees)
+genMaps :: Bool -> JsonPath -> JsonValueTree -> Deque (HashMap Text Value)
+genMaps flat jp jvt =
+  case (flat, jvt) of
+    (_, ValueRoot jpe trees) -> xfold $ genMaps flat (jpe `snoc` jp) <$> trees
+    (_, SingleValue jpe value) -> pure $ HM.singleton (jsonPathText $ jpe `snoc` jp) value
+    (False, ValueArray values) -> HM.singleton (jsonPathText (Iterator `snoc` jp)) <$> values
+    (True, ValueArray values) -> HM.singleton (jsonPathText jp) <$> values
+    (False, TreeArray trees) -> join $ ((xfold . (genMaps flat (Iterator `snoc` jp) <$>)) <$> trees)
+    (True, TreeArray trees) -> join $ ((xfold . (genMaps flat jp <$>)) <$> trees)
 
-generateTuples :: JsonTree -> Deque (HashMap Text Value)
-generateTuples jTree = xfold $ (genMaps empty) <$> jTree
+generateTuples :: Bool -> JsonTree -> Deque (HashMap Text Value)
+generateTuples flat jTree = xfold $ (genMaps flat empty) <$> jTree
 
 jsonPathText :: JsonPath -> Text
 jsonPathText path =
-  let repr = \case
-                Key k -> k
-                Iterator -> "$"
-  in intercalate "." $ toList $ fmap repr path
+  intercalate "." $ toList $ repr <$> path
+  where repr = \case
+                 Key k -> k
+                 Iterator -> "$"
+
+dropIterators :: JsonPath -> JsonPath
+dropIterators jpath =
+  mapMaybe takeKeys jpath
+  where takeKeys = \case
+                     Key k -> Just $ Key k
+                     Iterator -> Nothing
 
 xseq :: (a -> a -> a) -> Deque a -> Deque a -> Deque a
 xseq _ va D_ = va

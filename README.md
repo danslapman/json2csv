@@ -59,6 +59,22 @@ field a1|field b1|field c1||
 field a2|field b2||42.0|field c2
 field a2|field b xxx||42.0|field c2
 
+###### flattening
+
+If You don't need to know, which values came from arrays, You can use `-f` (`--flatten`)
+
+For the same JSON input it will give the following output:
+
+c.value|a|d|b.value
+-------|-|-|-------
+field c0|field a0||field b2
+field c0|field a0||field b xxx
+field c xxx|field a0||field b2
+field c xxx|field a0||field b xxx
+field c1|field a1||field b1
+field c2|field a2|42.0|field b2
+field c2|field a2|42.0|field b xxx
+
 ###### intersection
 
 You can extract only common fields from all lines with `-i` (`--intersect`)
