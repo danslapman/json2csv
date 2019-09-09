@@ -4,14 +4,11 @@
 module DequeUtils where
 
 import Control.DeepSeq
-import Control.Monad ((>=>))
-import Data.Foldable (foldl', find, toList)
+import Data.Foldable (find, toList)
 import qualified Data.List as L
-import qualified Data.HashMap.Strict as HM
 import Data.Hashable
 import Data.Maybe (Maybe(Just))
 import qualified Data.Maybe as Mb (mapMaybe)
-import Data.Traversable (mapM)
 import Data.Vector (Vector)
 import qualified Data.Vector as V 
 import Deque

@@ -4,11 +4,10 @@ module Json2Csv (computePaths, showj) where
 
 import Control.Applicative (pure)
 import Data.Aeson
-import Data.Maybe (catMaybes, mapMaybe)
+import Data.Maybe (mapMaybe)
 import qualified Data.HashMap.Strict as HM
 import Data.HashSet
 import Data.Text (Text, pack)
-import Data.Typeable (Typeable)
 import qualified Data.Vector as V
 import Deque (cons)
 import Prelude hiding (concatMap, foldl, join, map, null)
