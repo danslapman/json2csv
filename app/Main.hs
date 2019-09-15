@@ -2,7 +2,6 @@
 
 module Main where
 
-import Control.DeepSeq
 import Control.Monad
 import Control.Monad.Loops
 import Data.Aeson
@@ -16,8 +15,9 @@ import Data.HashSet (HashSet, empty, intersection, null, union)
 import qualified Data.HashSet as HS (toList)
 import Data.Text (Text, intercalate)
 import qualified Data.Text.IO as TIO
-import Deque (Deque, fromList)
+import Deque.Strict (Deque)
 import DequeUtils (uniq)
+import GHC.Exts (fromList)
 import Json2Csv
 import Options.Applicative hiding (empty)
 import Options.Applicative.Text
@@ -81,7 +81,7 @@ computeHeaderMultiline combine handle = do
                          Right value -> pure value
                          Left err -> fail $ "Can't parse JSON at line " ++ (show ln) ++ ": " ++ err
       let (Just header) = computePaths True parsed
-      modifyIORef' pathSet (combine $!! header)
+      modifyIORef' pathSet (combine header)
   pathes <- readIORef pathSet
   return $ fromList . HS.toList $ pathes
 

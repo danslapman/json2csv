@@ -17,10 +17,11 @@ import Data.Hashable
 import qualified Data.HashMap.Strict as HM
 import Data.Text (Text, intercalate)
 import Data.Typeable (Typeable)
-import Deque as DQ
+import Deque.Strict
 import DequePatterns
 import DequeUtils
 import GHC.Generics (Generic)
+import GHC.Exts (fromList)
 import Prelude hiding (any, foldl, foldl', head)
 
 data JsonPathElement = 

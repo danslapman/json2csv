@@ -9,7 +9,7 @@ import qualified Data.HashMap.Strict as HM
 import Data.HashSet
 import Data.Text (Text, pack)
 import qualified Data.Vector as V
-import Deque (cons)
+import Deque.Strict (cons)
 import Prelude hiding (concatMap, foldl, join, map, null)
 import HashSetUtils
 import Schema
