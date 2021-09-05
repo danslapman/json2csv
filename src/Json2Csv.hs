@@ -29,21 +29,16 @@ computePaths _ Null = Just empty
 computePaths _ (Bool _) = Just empty
 computePaths _ (Number _) = Just empty
 computePaths _ (String _) = Just empty
-computePaths False (Array arr) =
+computePaths flat (Array arr) =
   maybeNes
     . unions
-    . fmap (prepend Iterator)
+    . prepare
     . mapMaybe id
-    . fmap (computePaths False)
+    . fmap (computePaths flat)
     . V.toList
     $ arr
-computePaths True (Array arr) =
-  maybeNes
-    . unions
-    . mapMaybe id
-    . fmap (computePaths False)
-    . V.toList
-    $ arr
+  where
+    prepare = if flat then id else fmap (prepend Iterator)
 computePaths _ (Object obj) =
   maybeNes
     . unions
