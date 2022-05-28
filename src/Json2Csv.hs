@@ -3,7 +3,8 @@
 module Json2Csv (computePaths, showj) where
 
 import Data.Aeson
-import qualified Data.HashMap.Strict as HM
+import qualified Data.Aeson.Key as JK
+import qualified Data.Aeson.KeyMap as KM
 import Data.HashSet
 import Data.Maybe (mapMaybe)
 import Data.Text (Text, pack)
@@ -20,7 +21,7 @@ prepend prefix path = map (prefix `cons`) path
 
 nonEmptyJ :: Value -> Bool
 nonEmptyJ Null = False
-nonEmptyJ (Object o) | HM.null o = False
+nonEmptyJ (Object o) | KM.null o = False
 nonEmptyJ (Array a) | V.null a = False
 nonEmptyJ _ = True
 
@@ -42,11 +43,11 @@ computePaths flat (Array arr) =
 computePaths _ (Object obj) =
   maybeNes
     . unions
-    . (uncurry (prepend . Key) <$>)
-    . HM.toList
-    . HM.mapMaybe id
-    . HM.map (computePaths False)
-    . HM.filter nonEmptyJ
+    . (uncurry (prepend . Key . JK.toText) <$>)
+    . KM.toList
+    . KM.mapMaybe id
+    . KM.map (computePaths False)
+    . KM.filter nonEmptyJ
     $ obj
 
 showj :: Value -> Text
