@@ -16,4 +16,4 @@ jobs:
           stack-no-global: true
           enable-stack: true
           stack-version: 'latest'
-      - run: stack build
+      - run: stack --local-bin-path target install
