@@ -4,15 +4,32 @@ on: [push, pull_request]
 
 jobs:
   build:
+    name: Build
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macOS-latest, windows-latest]
+        include:
+          - os: ubuntu-latest
+            artifact_name: json2csv
+            asset_name: json2csv-linux-amd64
+          - os: windows-latest
+            artifact_name: json2csv.exe
+            asset_name: json2csv-windows-amd64
+          - os: macos-latest
+            artifact_name: json2csv
+            asset_name: json2csv-macos-amd64
     steps:
       - uses: actions/checkout@v3
       - uses: haskell/actions/setup@v2
         with:
-          # cabal-version: 'latest'. Omitted, but defaults to 'latest'
+          stack-no-global: true
           enable-stack: true
           stack-version: 'latest'
-      - run: stack build
+      - run: stack --local-bin-path target install
+      - uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: target/${{ matrix.artifact_name }}
+          asset_name: ${{ matrix.asset_name }}
+          tag: ${{ github.ref }}
+        if: ${{ startsWith(github.ref, 'refs/tags/') }}
