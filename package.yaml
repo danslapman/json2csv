@@ -35,6 +35,7 @@ dependencies:
 - deepseq
 - optparse-applicative
 - optparse-text
+- terminal-progress-bar
 
 library:
   source-dirs: src
