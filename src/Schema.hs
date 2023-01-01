@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 
@@ -7,10 +8,11 @@ module Schema where
 import Control.DeepSeq
 import Control.Lens ((^..), (^?))
 import Data.Aeson
+import Data.Aeson.Key (fromText)
 import Data.Aeson.Lens
 import Data.Foldable (any, foldl', toList)
 import Data.HashMap.Strict (HashMap)
-import qualified Data.HashMap.Strict as HM
+import Data.HashMap.Strict qualified as HM
 import Data.Hashable
 import Data.Maybe hiding (mapMaybe)
 import Data.Text (Text, intercalate)
@@ -57,10 +59,10 @@ toSchemaTree =
         (t, D_) -> t
         (PathNode el D_, h :|| tail)
           | el == h ->
-            PathNode el $ pure $ toSchemaTree tail
+              PathNode el $ pure $ toSchemaTree tail
         (PathNode el branches, h :|| tail)
           | el == h ->
-            PathNode el $ uniq $ branches #+ tail
+              PathNode el $ uniq $ branches #+ tail
         (PathEnd, path) -> toSchemaTree path
         (t, _) -> t
    in if any (hasSameRoot path) schema
@@ -86,17 +88,17 @@ extract schema value =
           PathEnd -> Nothing
           (PathNode el (PathEnd :|| D_)) ->
             case el of
-              Key k -> SingleValue el <$> v ^? key k
+              Key k -> SingleValue el <$> v ^? (key $ fromText k)
               Iterator -> ValueArray <$> (maybeNeq $ fromList $ v ^.. values)
           (PathNode el@(Key k) children) ->
-            let keyValue = (v ^? key k)
+            let keyValue = (v ^? (key $ fromText k))
                 childrenExtractors = flip extractTree <$> children
-                valueTrees = (\val -> mapMaybe id $ ($val) <$> childrenExtractors) <$> keyValue
+                valueTrees = (\val -> mapMaybe id $ ($ val) <$> childrenExtractors) <$> keyValue
              in ValueRoot el <$> valueTrees
           (PathNode Iterator children) ->
             let nodeValues = fromList $ v ^.. values
                 childrenExtractors = flip extractTree <$> children
-                nodeTrees = (\val -> mapMaybe id $ ($val) <$> childrenExtractors) <$> nodeValues
+                nodeTrees = (\val -> mapMaybe id $ ($ val) <$> childrenExtractors) <$> nodeValues
              in TreeArray <$> maybeNeq nodeTrees
    in mapMaybe id $ (extractTree value <$> schema)
 
