@@ -20,7 +20,7 @@ jobs:
             asset_name: json2csv-macos-amd64
     steps:
       - uses: actions/checkout@v4
-      - uses: haskell/actions/setup@v2
+      - uses: haskell-actions/setup@v2
         with:
           stack-no-global: true
           enable-stack: true
