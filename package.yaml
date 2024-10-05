@@ -68,3 +68,4 @@ tests:
     - -fwarn-unused-imports
     dependencies:
     - json2csv
+    - HUnit
