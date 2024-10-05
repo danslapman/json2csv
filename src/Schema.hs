@@ -15,13 +15,11 @@ import Data.HashMap.Strict (HashMap)
 import Data.HashMap.Strict qualified as HM
 import Data.Hashable
 import Data.Maybe hiding (mapMaybe)
+import Data.Sequence
 import Data.Text (Text, intercalate)
 import Data.Typeable (Typeable)
-import Deque.Strict
-import DequePatterns
-import DequeUtils
-import GHC.Exts (fromList)
 import GHC.Generics (Generic)
+import SequenceUtils
 import Prelude hiding (any, foldl, foldl', head)
 
 data JsonPathElement
@@ -33,63 +31,63 @@ instance Hashable JsonPathElement
 
 instance NFData JsonPathElement
 
-type JsonPath = Deque JsonPathElement
+type JsonPath = Seq JsonPathElement
 
 data JsonSchemaTree
-  = PathNode JsonPathElement (Deque JsonSchemaTree)
+  = PathNode JsonPathElement (Seq JsonSchemaTree)
   | PathEnd
   deriving (Eq, Show, Typeable)
 
-type JsonSchema = Deque JsonSchemaTree
+type JsonSchema = Seq JsonSchemaTree
 
 hasSameRoot :: JsonPath -> JsonSchemaTree -> Bool
 hasSameRoot path tree = case (tree, path) of
-  (PathNode el _, h :|| _) | el == h -> True
+  (PathNode el _, h :<| _) | el == h -> True
   otherwise -> False
 
 toSchemaTree :: JsonPath -> JsonSchemaTree
 toSchemaTree =
   \case
-    D_ -> PathEnd
-    root :|| path -> PathNode root $ pure $ toSchemaTree path
+    Empty -> PathEnd
+    root :<| path -> PathNode root $ pure $ toSchemaTree path
 
 (#+) :: JsonSchema -> JsonPath -> JsonSchema
 (#+) schema path =
   let append path tree = case (tree, path) of
-        (t, D_) -> t
-        (PathNode el D_, h :|| tail)
+        (t, Empty) -> t
+        (PathNode el Empty, h :<| tail)
           | el == h ->
               PathNode el $ pure $ toSchemaTree tail
-        (PathNode el branches, h :|| tail)
+        (PathNode el branches, h :<| tail)
           | el == h ->
               PathNode el $ uniq $ branches #+ tail
         (PathEnd, path) -> toSchemaTree path
         (t, _) -> t
    in if any (hasSameRoot path) schema
         then append path <$> schema
-        else toSchemaTree path `snoc` schema
+        else schema |> toSchemaTree path
 
-toSchema :: Deque JsonPath -> JsonSchema
+toSchema :: Seq JsonPath -> JsonSchema
 toSchema = foldl' (#+) empty
 
 data JsonValueTree
-  = ValueRoot JsonPathElement (Deque JsonValueTree)
+  = ValueRoot JsonPathElement (Seq JsonValueTree)
   | SingleValue JsonPathElement Value
-  | ValueArray (Deque Value)
-  | TreeArray (Deque (Deque JsonValueTree))
+  | ValueArray (Seq Value)
+  | TreeArray (Seq (Seq JsonValueTree))
   deriving (Eq, Show, Typeable)
 
-type JsonTree = Deque JsonValueTree
+type JsonTree = Seq JsonValueTree
 
 extract :: JsonSchema -> Value -> JsonTree
 extract schema value =
   let extractTree v schemaTree =
         case schemaTree of
           PathEnd -> Nothing
-          (PathNode el (PathEnd :|| D_)) ->
+          (PathNode el (PathEnd :<| Empty)) ->
             case el of
               Key k -> SingleValue el <$> v ^? (key $ fromText k)
-              Iterator -> ValueArray <$> (maybeNeq $ fromList $ v ^.. values)
+              Iterator -> ValueArray <$> (maybeNes $ fromList $ v ^.. values)
           (PathNode el@(Key k) children) ->
             let keyValue = (v ^? (key $ fromText k))
                 childrenExtractors = flip extractTree <$> children
@@ -99,20 +97,20 @@ extract schema value =
             let nodeValues = fromList $ v ^.. values
                 childrenExtractors = flip extractTree <$> children
                 nodeTrees = (\val -> mapMaybe id $ ($ val) <$> childrenExtractors) <$> nodeValues
-             in TreeArray <$> maybeNeq nodeTrees
+             in TreeArray <$> maybeNes nodeTrees
    in mapMaybe id $ (extractTree value <$> schema)
 
-genMaps :: Bool -> JsonPath -> JsonValueTree -> Deque (HashMap Text Value)
+genMaps :: Bool -> JsonPath -> JsonValueTree -> Seq (HashMap Text Value)
 genMaps flat jp jvt =
   case (flat, jvt) of
-    (_, ValueRoot jpe trees) -> xfold $ genMaps flat (jpe `snoc` jp) <$> trees
-    (_, SingleValue jpe value) -> pure $ HM.singleton (jsonPathText $ jpe `snoc` jp) value
-    (False, ValueArray values) -> HM.singleton (jsonPathText (Iterator `snoc` jp)) <$> values
+    (_, ValueRoot jpe trees) -> xfold $ genMaps flat (jp |> jpe) <$> trees
+    (_, SingleValue jpe value) -> pure $ HM.singleton (jsonPathText $ jp |> jpe) value
+    (False, ValueArray values) -> HM.singleton (jsonPathText (jp |> Iterator)) <$> values
     (True, ValueArray values) -> HM.singleton (jsonPathText jp) <$> values
-    (False, TreeArray trees) -> trees >>= (xfold . (genMaps flat (Iterator `snoc` jp) <$>))
+    (False, TreeArray trees) -> trees >>= (xfold . (genMaps flat (jp |> Iterator) <$>))
     (True, TreeArray trees) -> trees >>= (xfold . (genMaps flat jp <$>))
 
-generateTuples :: Bool -> JsonTree -> Deque (HashMap Text Value)
+generateTuples :: Bool -> JsonTree -> Seq (HashMap Text Value)
 generateTuples flat jTree = xfold $ genMaps flat empty <$> jTree
 
 jsonPathText :: JsonPath -> Text
@@ -131,13 +129,13 @@ dropIterators jpath =
       Key k -> Just $ Key k
       Iterator -> Nothing
 
-xseq :: (a -> a -> a) -> Deque a -> Deque a -> Deque a
-xseq _ va D_ = va
-xseq _ D_ vb = vb
+xseq :: (a -> a -> a) -> Seq a -> Seq a -> Seq a
+xseq _ va Empty = va
+xseq _ Empty vb = vb
 xseq f va vb = do
   a <- va
   b <- vb
   return $ f a b
 
-xfold :: Deque (Deque (HashMap Text Value)) -> Deque (HashMap Text Value)
+xfold :: Seq (Seq (HashMap Text Value)) -> Seq (HashMap Text Value)
 xfold = foldl' (xseq HM.union) empty

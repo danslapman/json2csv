@@ -31,7 +31,6 @@ dependencies:
 - lens
 - lens-aeson
 - monad-loops
-- deque
 - hashable
 - deepseq
 - optparse-applicative

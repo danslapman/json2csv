@@ -13,15 +13,15 @@ import qualified Data.HashMap.Strict as HM
 import Data.HashSet (HashSet, empty, intersection, null, union)
 import qualified Data.HashSet as HS (toList)
 import Data.IORef
+import Data.Sequence (Seq)
+import qualified Data.Sequence as Seq (fromList)
 import Data.Text (Text, intercalate)
 import qualified Data.Text.IO as TIO
-import Deque.Strict (Deque)
-import DequeUtils (uniq)
-import GHC.Exts (fromList)
 import Json2Csv
 import Options.Applicative hiding (empty)
 import Options.Applicative.Text
 import Schema
+import SequenceUtils (uniq)
 import System.IO
 import System.ProgressBar
 import Prelude hiding (foldl, foldl', map, null, sequence)
@@ -75,7 +75,7 @@ main = do
         (parseAndWriteEntry mkSepString flat schema columns hIn hOut)
         incProgress pb 1
 
-computeHeaderMultiline :: PathSetCombine -> Handle -> IO (Deque JsonPath, Int)
+computeHeaderMultiline :: PathSetCombine -> Handle -> IO (Seq JsonPath, Int)
 computeHeaderMultiline combine handle = do
   currentLineNumber <- newIORef (0 :: Int)
   pathSet <- newIORef (empty :: HashSet JsonPath)
@@ -90,9 +90,9 @@ computeHeaderMultiline combine handle = do
     modifyIORef' pathSet (combine header)
   pathes <- readIORef pathSet
   numberOfLines <- readIORef currentLineNumber
-  return (fromList . HS.toList $ pathes, numberOfLines)
+  return (Seq.fromList . HS.toList $ pathes, numberOfLines)
 
-parseAndWriteEntry :: (Deque Text -> Text) -> Bool -> JsonSchema -> Deque Text -> Handle -> Handle -> IO ()
+parseAndWriteEntry :: (Seq Text -> Text) -> Bool -> JsonSchema -> Seq Text -> Handle -> Handle -> IO ()
 parseAndWriteEntry mkSepString flat schema columns hIn hOut = do
   line <- LBS.fromStrict <$> BS.hGetLine hIn
   let (Just parsed) = decode line :: Maybe Value
