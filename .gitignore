@@ -1,3 +1,4 @@
+.vscode/
 dist
 dist-*
 cabal-dev
@@ -23,3 +24,4 @@ cabal.project.local~
 json2csv.cabal
 stack.yaml.lock
 */target/**
+.repos

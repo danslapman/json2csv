@@ -7,9 +7,9 @@ import qualified Data.Aeson.Key as JK
 import qualified Data.Aeson.KeyMap as KM
 import Data.HashSet
 import Data.Maybe (mapMaybe)
+import Data.Sequence ((<|))
 import Data.Text (Text, pack)
 import qualified Data.Vector as V
-import Deque.Strict (cons)
 import HashSetUtils
 import Schema
 import TextShow hiding (singleton)
@@ -17,7 +17,7 @@ import Prelude hiding (concatMap, foldl, join, map, null)
 
 prepend :: JsonPathElement -> HashSet JsonPath -> HashSet JsonPath
 prepend prefix s | null s = singleton $ pure prefix
-prepend prefix path = map (prefix `cons`) path
+prepend prefix path = map (prefix <|) path
 
 nonEmptyJ :: Value -> Bool
 nonEmptyJ Null = False

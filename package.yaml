@@ -26,11 +26,11 @@ dependencies:
 - bytestring
 - aeson
 - vector
+- containers
 - unordered-containers
 - lens
 - lens-aeson
 - monad-loops
-- deque
 - hashable
 - deepseq
 - optparse-applicative
@@ -68,3 +68,4 @@ tests:
     - -fwarn-unused-imports
     dependencies:
     - json2csv
+    - HUnit
