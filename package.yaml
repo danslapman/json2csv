@@ -26,6 +26,7 @@ dependencies:
 - bytestring
 - aeson
 - vector
+- containers
 - unordered-containers
 - lens
 - lens-aeson
