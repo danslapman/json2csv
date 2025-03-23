@@ -1,4 +1,10 @@
+import SequenceUtilsSpec
 import Test.HUnit
+import System.Exit (exitFailure, exitSuccess)
 
 main :: IO ()
-main = putStrLn "Test suite not yet implemented"
+main = do
+  counts <- runTestTT seqTestCases
+  if errors counts + failures counts == 0
+        then exitSuccess
+        else exitFailure
