@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE LambdaCase #-}
@@ -36,7 +37,7 @@ type JsonPath = Seq JsonPathElement
 data JsonSchemaTree
   = PathNode JsonPathElement (Seq JsonSchemaTree)
   | PathEnd
-  deriving (Eq, Show, Typeable)
+  deriving (Eq, Show, Typeable, Generic, Hashable)
 
 type JsonSchema = Seq JsonSchemaTree
 

@@ -14,7 +14,7 @@ testUniqEmptySequence :: Test
 testUniqEmptySequence = TestCase $ assertEqual "uniq empty sequence" (empty :: Seq Int) (uniq (empty :: Seq Int))
 
 testUniqNonEmptySequence :: Test
-testUniqNonEmptySequence = TestCase $ assertEqual "uniq non-empty sequence" (fromList [1, 2, 3]) (uniq $ fromList [1, 2, 2, 3])
+testUniqNonEmptySequence = TestCase $ assertEqual "uniq non-empty sequence" (fromList [1, 2, 3] :: Seq Int) (uniq $ fromList [1, 2, 2, 3])
 
 testMapMaybeEmptySequence :: Test
 testMapMaybeEmptySequence = TestCase $ assertEqual "mapMaybe empty sequence" (empty :: Seq Int) (mapMaybe (const Nothing) (empty :: Seq Int))
